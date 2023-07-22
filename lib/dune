@@ -1,0 +1,4 @@
+(library
+ (name reactagen)
+ (libraries tyxml))
+

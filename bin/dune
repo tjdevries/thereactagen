@@ -1,0 +1,10 @@
+(executable
+ (package reactagen)
+ (public_name reactagen)
+ (name main)
+ (libraries
+   reactagen models based
+   dream dream-livereload
+   tyxml fmt
+   caqti-driver-sqlite3)
+ (preprocess (pps ppx_let lwt_ppx)))

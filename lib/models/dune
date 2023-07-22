@@ -1,0 +1,5 @@
+(library
+  (name models)
+  (libraries reactagen base fmt petrol caqti-lwt dream tyxml hx)
+  (flags :standard -linkall)
+  (preprocess (pps ppx_let lwt_ppx)))

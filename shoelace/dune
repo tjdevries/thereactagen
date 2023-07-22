@@ -1,0 +1,23 @@
+(library
+ (name shoelace)
+ (package shoelace)
+ (libraries tyxml base fmt)
+ (modules last))
+
+(executable
+  (name sl_build)
+  (public_name sl_build)
+  (modules sl_build)
+  (package shoelace)
+  (flags :standard -w -32)
+  (libraries tyxml base fmt bos yojson ppx_deriving ppx_deriving_yojson)
+  (preprocess
+   (pps ppx_deriving_yojson ppx_deriving.show)))
+
+
+(rule
+ (deps shoelace.json sl_build.exe)
+ (action
+  (run sl_build %{targets} %{deps}))
+ (targets shoelace.gen.ml)
+ (mode promote))

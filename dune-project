@@ -37,3 +37,7 @@
     yojson ppx_deriving_yojson
     base fmt tyxml))
 
+(package
+ (name ppx_combust)
+ (synopsis "Generate boilerplate stuff for petrol to go zoom zoom")
+ (depends ocaml ppxlib))

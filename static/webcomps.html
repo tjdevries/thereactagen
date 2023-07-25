@@ -4,11 +4,27 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.5.2/cdn/themes/light.css" />
     <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.5.2/cdn/shoelace-autoloader.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+    <style>
+:root {
+  background: gray
+}
+    </style>
   </head>
   <body>
+    <div>
+      <sl-carousel pagination navigation mouse-dragging loop>
+        <sl-carousel-item>
+          <img src="https://pbs.twimg.com/profile_images/1598959528518643713/aWdwBYxv_400x400.jpg">
+        </sl-carousel-item>
+
+        <sl-carousel-item>
+          <img src="https://pbs.twimg.com/profile_images/1613151603564986368/dZoNeRKn_400x400.jpg">
+        </sl-carousel-item>
+      </sl-carousel>
+    </div>
     <div id="suggestion-1">
-      <sl-tooltip content="Click to replace with user" trigger="hover">
-        <sl-button hx-get="/suggestion/1" hx-swap="outerHTML" hx-target="#suggestion-1" size="large">Hello world</sl-input>
+      <sl-tooltip content="Click to append stuff!" trigger="hover">
+        <sl-button hx-get="/suggestion/1" hx-swap="afterend" hx-target="#suggestion-1" size="large">Hello world</sl-input>
       </sl-tooltip>
     </div>
     <div>

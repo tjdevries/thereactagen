@@ -61,6 +61,7 @@ let table, fields =
       ]
 ;;
 
+(* let Expr.[ f_id; f_user_id; f_url; f_description; f_category ] = fields *)
 let Expr.[ f_id; f_user_id; f_url; f_description; f_category ] = fields
 
 let decode (id, (user_id, (url, (description, (category, ()))))) =

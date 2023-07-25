@@ -39,9 +39,15 @@ let process_element (element : element) =
     | _ -> assert false
   in
   let short_name = String.chop_prefix_exn name ~prefix:"sl-" in
-  Fmt.str {|
+  Fmt.str
+    {|
 let %s children = Tyxml.Html.Unsafe.node "%s" children
-|} short_name name
+(* %s *)
+|}
+    short_name
+    name
+    (String.concat ~sep:" "
+     @@ List.map element.attributes ~f:(fun elt -> elt.name))
 ;;
 
 let () =
@@ -60,7 +66,7 @@ let () =
   let sl_input =
     List.find schema.contributions.html.elements ~f:(fun item ->
       match item.name with
-      | Some str when String.(str = "sl-input") -> true
+      | Some str when String.(str = "sl-carousel") -> true
       | _ -> false)
   in
   let lines = ref "let x = 10" in

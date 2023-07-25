@@ -3,7 +3,7 @@
  (public_name reactagen)
  (name main)
  (libraries
-   reactagen models based
+   reactagen models views based
    dream dream-livereload
    tyxml fmt
    caqti-driver-sqlite3)

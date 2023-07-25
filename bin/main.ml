@@ -1,21 +1,15 @@
 open Base
 
+let default_header = Reactagen.Header.default_header
 let () = Fmt.pr "Loading...@."
-
-let default_header title_txt =
-  let open Tyxml.Html in
-  head
-    (title @@ txt title_txt)
-    Reactagen.Scripts.[ htmx; tailwind; daisy; mystyle ]
-;;
 
 let index request =
   let open Lwt_result.Syntax in
   let* suggestions = Models.Suggestion.show_all request in
   let open Tyxml.Html in
   html
-    ~a:[ Unsafe.string_attrib "data-theme" "cupcake" ]
-    (default_header "TheReactagen")
+    (* ~a:[ Unsafe.string_attrib "data-theme" "cupcake" ] *)
+    (default_header "𝕏 TheReactagen 𝕏")
     (body [ suggestions; div [ Models.Suggestion.post_form request ] ])
   |> Lwt.return_ok
 ;;
@@ -24,12 +18,36 @@ let html_to_string html = Fmt.str "%a" (Tyxml.Html.pp ()) html
 let elt_to_string elt = Fmt.str "%a" (Tyxml.Html.pp_elt ()) elt
 let db_uri = "sqlite3:/home/tjdevries/tmp/reactagen.sqlite"
 
+let get_user _ =
+  (* let user_id = Dream.session_field request "user" in *)
+  (* match user_id with *)
+  (* | None -> *)
+  (*   let%lwt () = Dream.invalidate_session request in *)
+  (*   let%lwt () = Dream.set_session_field request "user" "1" in *)
+  (*   Some 1 |> Lwt.return *)
+  (* | Some _ -> Some 1 |> Lwt.return *)
+  Some 1 |> Lwt.return
+;;
+
+let post_vote ~vote request =
+  let suggestion_id = Dream.param request "id" |> Int.of_string in
+  let%lwt user_id = get_user request in
+  (* TODO: Not logged in *)
+  let user_id = Option.value_exn user_id in
+  let _ =
+    Dream.sql request @@ Models.Vote.insert ~suggestion_id ~user_id ~vote
+  in
+  match%lwt Dream.sql request @@ Models.Vote.get_vote_total ~suggestion_id with
+  | Ok count -> Dream.response (Fmt.str "%d" count) |> Lwt.return
+  | _ -> assert false
+;;
+
 let () =
   let _ = Based.initialize db_uri in
   Fmt.pr "[reactagen] starting dream@.";
   Dream.run
   @@ Dream.logger
-  @@ Dream_livereload.inject_script ()
+  (* @@ Dream_livereload.inject_script () *)
   @@ Dream.sql_pool db_uri
   @@ Dream.memory_sessions
   @@ Dream.router
@@ -52,9 +70,19 @@ let () =
            let id = Dream.param request "id" in
            let id = Int.of_string id in
            match%lwt Models.Suggestion.show_one request id with
-           | Ok text -> text |> elt_to_string |> Dream.html
+           | Ok text -> text |> elt_to_string |> Dream.response |> Lwt.return
            | _ -> assert false)
+       ; Dream.get "/suggestion/view/:id" (fun request ->
+           let id = Dream.param request "id" |> Int.of_string in
+           let%lwt user_id = get_user request in
+           match%lwt
+             Views.Suggestion.view ~user_id ~suggestion_id:id request
+           with
+           | Ok response -> html_to_string response |> Dream.html
+           | Error err -> Fmt.failwith "%a" Caqti_error.pp err)
+       ; Dream.post "/suggestion/upvote/:id" (post_vote ~vote:1)
+       ; Dream.post "/suggestion/downvote/:id" (post_vote ~vote:(-1))
        ; Dream.get "/static/**" (Dream.static "static/")
-       ; Dream_livereload.route ()
+         (* ; Dream_livereload.route () *)
        ]
 ;;

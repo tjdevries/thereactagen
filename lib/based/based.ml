@@ -12,14 +12,14 @@ let initialize uri =
       ~password:"selfpromo"
       connection
   in
-  let* _ =
+  let* prime_id =
     Models.User.insert
       ~display_name:"The React Agen"
       ~username:"theprimeagen"
       ~password:"thankstj"
       connection
   in
-  let* _ =
+  let* suggestion_id =
     Models.Suggestion.insert
       ~user_id
       ~url:"https://teej.tv"
@@ -27,6 +27,11 @@ let initialize uri =
       ~category:Article
       connection
   in
-  print_endline "[reactagen] initialize done";
+  let* _ = Models.Vote.insert ~suggestion_id ~user_id ~vote:1 connection in
+  let* _ =
+    Models.Vote.insert ~suggestion_id ~user_id:prime_id ~vote:1 connection
+  in
+  let* counted = Models.Vote.get_vote_total ~suggestion_id connection in
+  print_endline ("[reactagen] initialize done: " ^ Int.to_string counted);
   Lwt.return_ok true
 ;;

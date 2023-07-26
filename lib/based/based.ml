@@ -6,14 +6,14 @@ let initialize uri =
   let* connection = Caqti_lwt.connect connection in
   let* _ = Petrol.StaticSchema.initialise schema connection in
   let* user_id =
-    Models.User.insert
+    Models.User.create
       ~display_name:"TJ DeVries"
       ~username:"tjdevries"
       ~password:"selfpromo"
       connection
   in
   let* prime_id =
-    Models.User.insert
+    Models.User.create
       ~display_name:"The React Agen"
       ~username:"theprimeagen"
       ~password:"thankstj"
@@ -27,9 +27,9 @@ let initialize uri =
       ~category:Article
       connection
   in
-  let* _ = Models.Vote.insert ~suggestion_id ~user_id ~vote:1 connection in
+  let* _ = Models.Vote.create ~suggestion_id ~user_id ~vote:1 connection in
   let* _ =
-    Models.Vote.insert ~suggestion_id ~user_id:prime_id ~vote:1 connection
+    Models.Vote.create ~suggestion_id ~user_id:prime_id ~vote:1 connection
   in
   let* counted = Models.Vote.get_vote_total ~suggestion_id connection in
   print_endline ("[reactagen] initialize done: " ^ Int.to_string counted);

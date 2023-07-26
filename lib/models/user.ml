@@ -6,58 +6,13 @@ let schema = Schema.schema
 open Petrol
 open Petrol.Sqlite3
 
-(** The User type  *)
 type t =
   { id : int [@primary]
   ; username : string [@unique]
   ; display_name : string
   ; password : string
   }
-[@@deriving combust ~schema:Schema.schema ~name:"users"]
-
-let table, Expr.[ f_id; f_username; f_password; f_display_name ] =
-  StaticSchema.declare_table
-    schema
-    ~name:"users"
-    Schema.
-      [ field
-          "id"
-          ~ty:Type.int
-          ~constraints:[ primary_key ~auto_increment:true () ]
-      ; field
-          "username"
-          ~ty:Type.text
-          ~constraints:
-            [ unique
-                ~name:"username_unique"
-                ~on_conflict:`FAIL (* TODO: Is this the right conflict? *)
-                ()
-            ]
-      ; field "not_the_password" ~ty:Type.text
-      ; field "display_name" ~ty:Type.text
-      ]
-;;
-
-let insert ~username ~display_name ~password db =
-  Query.insert
-    ~table
-    ~values:
-      Expr.
-        [ f_username := s username
-        ; f_display_name := s display_name
-        ; f_password := s password
-        ]
-  |> Query.returning Expr.[ f_id ]
-  |> Request.make_one
-  |> Petrol.find db
-  |> Lwt_result.map fst
-;;
-
-let decode (id, (username, (display_name, (password, ())))) =
-  { id; username; display_name; password }
-;;
-
-let fields = Expr.[ f_id; f_username; f_display_name; f_password ]
+[@@deriving combust ~name:"users"]
 
 let find_user ~username db =
   Query.select ~from:table fields
@@ -66,17 +21,6 @@ let find_user ~username db =
   |> Petrol.find_opt db
   |> Lwt_result.map (Option.map ~f:decode)
 ;;
-
-let read ~id db =
-  Query.select ~from:table fields
-  |> Query.where Expr.(f_id = i id)
-  |> Request.make_zero_or_one
-  |> Petrol.find_opt db
-  |> Lwt_result.map (Option.map ~f:decode)
-;;
-
-(* let read ~id = *)
-(*   Base. *)
 
 let find_data t key =
   let data =
@@ -99,7 +43,7 @@ let post_router (request : Dream.request) =
   let* username = find_data form_data "username" in
   let* display_name = find_data form_data "display_name" in
   let* password = find_data form_data "password" in
-  Dream.sql request (insert ~username ~display_name ~password)
+  Dream.sql request (create ~username ~display_name ~password)
 ;;
 
 let make_input ~name ~text ~input_type =

@@ -25,13 +25,12 @@ let base_url = "/suggestion"
 
 (** A suggestion *)
 type t =
-  { id : int [@primary]
-  ; user_id : int [@foreign Models.User f_id]
+  { id : int
+  ; user_id : int
   ; url : string
   ; description : string
   ; category : category
   }
-[@@deriving model ~name:"suggestions"]
 
 (* We could probably do `let table, fields = ...` and then
    folow that up with `let [ f_id, f_x, ... ] = fields *)

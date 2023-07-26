@@ -10,7 +10,7 @@
  (modules combust)
  (package ppx_combust)
  (flags (:standard -w -27))
- (libraries ppxlib base fmt)
+ (libraries ppxlib base fmt ppx_deriving.api)
  (preprocess
   (pps ppxlib.metaquot)))
 

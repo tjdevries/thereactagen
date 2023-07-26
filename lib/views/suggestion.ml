@@ -3,16 +3,12 @@ open Lwt_result.Syntax
 let view ~user_id ~suggestion_id request =
   let upvote_id = "suggestion-upvote" in
   let _ = user_id in
-  Fmt.pr "Searching for suggestion ID: %d@." suggestion_id;
   let* suggestion =
     Dream.sql request @@ Models.Suggestion.find ~id:suggestion_id
   in
-  Fmt.pr "Found suggestion@.";
   let* count = Dream.sql request @@ Models.Vote.get_vote_total ~suggestion_id in
-  Fmt.pr "Found count: %d@." count;
   match suggestion with
   | Some suggestion ->
-    Fmt.pr "Found suggestion ID: %d@." suggestion.id;
     let open Tyxml.Html in
     html
       (Reactagen.Header.default_header "Example Post")

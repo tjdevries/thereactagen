@@ -35,7 +35,7 @@ let post_vote ~vote request =
   (* TODO: Not logged in *)
   let user_id = Option.value_exn user_id in
   let _ =
-    Dream.sql request @@ Models.Vote.insert ~suggestion_id ~user_id ~vote
+    Dream.sql request @@ Models.Vote.create ~suggestion_id ~user_id ~vote
   in
   match%lwt Dream.sql request @@ Models.Vote.get_vote_total ~suggestion_id with
   | Ok count -> Dream.response (Fmt.str "%d" count) |> Lwt.return
@@ -43,7 +43,13 @@ let post_vote ~vote request =
 ;;
 
 let () =
-  let _ = Based.initialize db_uri in
+  let _ =
+    match%lwt Based.initialize db_uri with
+    | Ok _ -> true |> Lwt.return
+    | Error err ->
+      Fmt.pr "Database Errored: %a @." Caqti_error.pp err;
+      true |> Lwt.return
+  in
   Fmt.pr "[reactagen] starting dream@.";
   Dream.run
   @@ Dream.logger

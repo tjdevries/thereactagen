@@ -26,7 +26,6 @@ module type S = sig
   include Model.S
   include Storage.S
 
-  val storage : s storage
   val encode : t -> (s, string) result
   val decode : s -> (t, string) result
 end

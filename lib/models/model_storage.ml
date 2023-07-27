@@ -31,7 +31,6 @@ module type S = sig
   include Model.S
   include Storage.S
 
-  val storage : s storage
   val encode : t -> (s, string) result
   val decode : s -> (t, string) result
 end
@@ -39,12 +38,6 @@ end
 module Make (M : S) = struct
   include M
 
-  let ty =
-    Caqti_type.custom
-      ~encode:M.encode
-      ~decode:M.decode
-      (to_caqti_storage M.storage)
-  ;;
-
-  let petrol_type = Petrol.Type.custom ~ty ~repr:M.name
+  let ty = Caqti_type.custom ~encode ~decode (to_caqti_storage storage)
+  let petrol_type = Petrol.Type.custom ~ty ~repr:name
 end

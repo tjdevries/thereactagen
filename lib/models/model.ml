@@ -1,5 +1,5 @@
 module type S = sig
-  type t
+  type t [@@deriving enumerate, show { with_path = false }]
 
   val name : string
 end

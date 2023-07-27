@@ -23,7 +23,7 @@
    dream dream-livereload
    tyxml
    bos
-   base fmt ppx_let
+   base fmt ppx_let ppx_enumerate
    lwt caqti caqti-lwt caqti-dynload caqti-driver-sqlite3)
  (tags
   (topics "to describe" your project)))

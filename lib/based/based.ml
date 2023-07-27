@@ -20,8 +20,9 @@ let initialize uri =
       connection
   in
   let* suggestion_id =
-    Models.Suggestion.insert
+    Models.Suggestion.create
       ~user_id
+      ~title:"Teej's Site"
       ~url:"https://teej.tv"
       ~description:"a very cool site"
       ~category:Article

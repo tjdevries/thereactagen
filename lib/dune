@@ -1,4 +1,4 @@
 (library
  (name reactagen)
- (libraries tyxml dream))
+ (libraries tyxml dream lwt))
 

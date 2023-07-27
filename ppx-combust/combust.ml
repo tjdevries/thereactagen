@@ -79,24 +79,33 @@ module FieldUtil = struct
 
   let get_type ~loc lbl =
     match lbl.pld_type.ptyp_desc with
-    | Ptyp_constr ({ txt = Lident li; _ }, _) -> li
-    | _ -> assert false
+    | Ptyp_constr ({ txt = Lident li; _ }, _) -> li, None
+    | Ptyp_constr ({ txt = Ldot (Lident li, acc); _ }, _) -> li, Some acc
+    | _ -> Location.raise_errorf ~loc:lbl.pld_loc "Unknown type in combust"
   ;;
 
   let petrol_type ~loc lbl =
-    match get_type ~loc lbl with
-    | "int" -> "int"
-    | "string" -> "text"
-    | ty -> Location.raise_errorf ~loc "Unknown petrol type: %s" ty
+    let ident, str =
+      match get_type ~loc lbl with
+      | "int", _ -> "Type", "int"
+      | "string", _ -> "Type", "text"
+      | ty, Some _ -> ty, "custom"
+      | ty, None ->
+        Location.raise_errorf ~loc:lbl.pld_loc "Unknown petrol type: %s" ty
+    in
+    Longident.(Ldot (Lident ident, str))
   ;;
 
   let petrol_type_fn ~loc lbl =
-    make_str_ident ~loc
-    @@
     match get_type ~loc lbl with
-    | "int" -> "i"
-    | "string" -> "s"
-    | ty -> Location.raise_errorf ~loc "Unknown petrol type: %s" ty
+    | "int", _ -> make_str_ident ~loc "i"
+    | "string", _ -> make_str_ident ~loc "s"
+    | ty, Some _ ->
+      let ty = Longident.(Ldot (Lident ty, "custom")) in
+      let ty = make_ident ~loc:lbl.pld_loc ty in
+      [%expr vl ~ty:[%e ty]]
+    | ty, None ->
+      Location.raise_errorf ~loc:lbl.pld_loc "Unknown petrol type fn: %s" ty
   ;;
 end
 
@@ -105,8 +114,8 @@ let make_field_from_label ~loc lbl =
   let primary_attr = FieldUtil.primary_key_opt lbl in
   let unique_attr = FieldUtil.unique_key_opt lbl in
   let foreign_attr = FieldUtil.foreign_key_opt lbl in
-  let sql_type_string = FieldUtil.petrol_type ~loc lbl in
-  let ty = make_ident ~loc Longident.(Ldot (Lident "Type", sql_type_string)) in
+  let petrol_type = FieldUtil.petrol_type ~loc lbl in
+  let ty = make_ident ~loc petrol_type in
   match primary_attr, unique_attr, foreign_attr with
   | Some primary, _, _ ->
     let payload = primary.attr_payload in

@@ -6,47 +6,44 @@ let schema = Schema.schema
 open Petrol
 open Petrol.Sqlite3
 
-module CategoryImpl = struct
-  type t =
-    | Video
-    | Article
-    | Website
-    | Twitch
-  [@@deriving enumerate, show { with_path = false }]
+module CategoryStorage = Model_storage.Make (struct
+  open Model_storage
+  include Model.Category
+  include Storage.StringStorage
 
-  type storage = string
-
-  let caqti_storage = Caqti_type.string
-  let repr = "category"
-
-  let encode_exn = function
-    | Article -> "article"
-    | Video -> "video"
-    | Website -> "website"
-    | Twitch -> "twitch"
+  let encode = function
+    | Article -> Ok "article"
+    | Video -> Ok "video"
+    | Website -> Ok "website"
+    | Twitch -> Ok "twitch"
   ;;
 
-  let decode_exn t =
+  let decode t =
     match String.lowercase t with
-    | "article" -> Article
-    | "video" -> Video
-    | "website" -> Website
-    | "twitch" -> Twitch
-    | _ -> raise Stdlib.Not_found
+    | "article" -> Ok Article
+    | "video" -> Ok Video
+    | "website" -> Ok Website
+    | "twitch" -> Ok Twitch
+    | _ -> Error "Not found"
   ;;
+end)
+
+module Category = struct
+  open Model
+  include CategoryStorage
 
   let make_select ~name () =
     let open Tyxml.Html in
     let options =
-      List.map all ~f:(fun t -> option ~a:[ a_value (show t) ] (txt @@ show t))
+      Category.(
+        List.map all ~f:(fun t ->
+          option ~a:[ a_value (show t) ] (txt @@ show t)))
     in
     select
       ~a:[ a_class [ "select"; "select-bordered" ]; a_id name; a_name name ]
       options
   ;;
 end
-
-module Category = Mulroy.Make (CategoryImpl)
 
 let base_url = "/suggestion"
 

@@ -30,7 +30,7 @@ let view ~user_id ~suggestion_id request =
       ; row "Description" (txt suggestion.description)
       ; row
           "Category"
-          (suggestion.category |> Models.Suggestion.Category.encode_exn |> txt)
+          (suggestion.category |> Models.Suggestion.Category.show |> txt)
       ; row "Upvotes" (span ~a:[ a_id upvote_id ] [ txt (Fmt.str "%d" count) ])
       ]
       |> List.flatten

@@ -89,7 +89,7 @@ module FieldUtil = struct
       match get_type ~loc lbl with
       | "int", _ -> "Type", "int"
       | "string", _ -> "Type", "text"
-      | ty, Some _ -> ty, "custom"
+      | ty, Some _ -> ty, "petrol_type"
       | ty, None ->
         Location.raise_errorf ~loc:lbl.pld_loc "Unknown petrol type: %s" ty
     in
@@ -101,7 +101,7 @@ module FieldUtil = struct
     | "int", _ -> make_str_ident ~loc "i"
     | "string", _ -> make_str_ident ~loc "s"
     | ty, Some _ ->
-      let ty = Longident.(Ldot (Lident ty, "custom")) in
+      let ty = Longident.(Ldot (Lident ty, "petrol_type")) in
       let ty = make_ident ~loc:lbl.pld_loc ty in
       [%expr vl ~ty:[%e ty]]
     | ty, None ->
@@ -277,6 +277,9 @@ let generate_impl ~ctxt (_rec_flag, type_decls) name constraints =
               ~constraints:[%e constraints]
               Schema.([%e schema_fields])
           ;;
+
+          (* TODO: Should keep track of all custom types and assert
+             that they match the module type we need *)
 
           [%%i field_destructure]
           [%%i decode]

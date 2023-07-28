@@ -5,48 +5,26 @@ let schema = Schema.schema
 
 open Petrol
 open Petrol.Sqlite3
+module CategoryStorage = Model_storage.MakeString (Model.Category)
 
-module CategoryImpl = struct
-  type t =
-    | Video
-    | Article
-    | Website
-    | Twitch
-  [@@deriving enumerate, show { with_path = false }]
-
-  type storage = string
-
-  let caqti_storage = Caqti_type.string
-  let repr = "category"
-
-  let encode_exn = function
-    | Article -> "article"
-    | Video -> "video"
-    | Website -> "website"
-    | Twitch -> "twitch"
-  ;;
-
-  let decode_exn t =
-    match String.lowercase t with
-    | "article" -> Article
-    | "video" -> Video
-    | "website" -> Website
-    | "twitch" -> Twitch
-    | _ -> raise Stdlib.Not_found
-  ;;
+module Category = struct
+  open Model
+  include CategoryStorage
 
   let make_select ~name () =
     let open Tyxml.Html in
     let options =
-      List.map all ~f:(fun t -> option ~a:[ a_value (show t) ] (txt @@ show t))
+      Category.(
+        List.map all ~f:(fun t ->
+          option
+            ~a:[ a_value (CategoryStorage.encode t |> Result.ok_or_failwith) ]
+            (txt @@ show t)))
     in
     select
       ~a:[ a_class [ "select"; "select-bordered" ]; a_id name; a_name name ]
       options
   ;;
 end
-
-module Category = Mulroy.Make (CategoryImpl)
 
 let base_url = "/suggestion"
 
@@ -192,7 +170,7 @@ let post_form request =
         ; make_input ~name:"description" ~text:"Description:" ~input_type:`Text
         ; div
             ~a:[ a_class [ "mb-6" ] ]
-            [ CategoryImpl.make_select ~name:"category" () ]
+            [ Category.make_select ~name:"category" () ]
         ; button
             ~a:[ a_button_type `Submit; a_class [ "btn" ] ]
             [ txt "Submit This" ]

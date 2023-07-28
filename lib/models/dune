@@ -5,4 +5,4 @@
   (preprocess
     (pps ppx_let lwt_ppx ppx_combust
          ppx_enumerate
-         ppx_deriving.enum ppx_deriving.show)))
+         ppx_deriving.enum ppx_deriving.show ppx_deriving_yojson)))

@@ -19,6 +19,7 @@ depends: [
   "base"
   "fmt"
   "ppx_let"
+  "ppx_enumerate"
   "lwt"
   "caqti"
   "caqti-lwt"

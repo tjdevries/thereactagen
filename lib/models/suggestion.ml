@@ -72,7 +72,14 @@ let suggestion_row suggestion =
   let id = suggestion.id |> Int.to_string in
   let open Tyxml.Html in
   tr
-    [ td [ a ~a:[ a_href @@ "/suggestion/view/" ^ id ] [ txt id ] ]
+    [ td
+        [ a
+            ~a:
+              [ a_href @@ "/suggestion/view/" ^ id
+              ; a_class [ "link link-hover" ]
+              ]
+            [ txt id ]
+        ]
     ; td [ txt suggestion.url ]
     ; td [ txt suggestion.title ]
     ; td [ txt suggestion.description ]

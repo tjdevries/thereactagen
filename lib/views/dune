@@ -1,6 +1,7 @@
 (library
   (name views)
-  (libraries reactagen base fmt dream tyxml hx models))
+  (libraries reactagen base fmt dream tyxml hx models)
+  (preprocess (pps tyxml-ppx)))
 
 
 

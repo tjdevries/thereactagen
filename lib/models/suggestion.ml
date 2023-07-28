@@ -5,28 +5,7 @@ let schema = Schema.schema
 
 open Petrol
 open Petrol.Sqlite3
-
-module CategoryStorage = Model_storage.Make (struct
-  open Model_storage
-  include Model.Category
-  include Storage.StringStorage
-
-  let encode = function
-    | Article -> Ok "article"
-    | Video -> Ok "video"
-    | Website -> Ok "website"
-    | Twitch -> Ok "twitch"
-  ;;
-
-  let decode t =
-    match String.lowercase t with
-    | "article" -> Ok Article
-    | "video" -> Ok Video
-    | "website" -> Ok Website
-    | "twitch" -> Ok Twitch
-    | _ -> Error "Not found"
-  ;;
-end)
+module CategoryStorage = Model_storage.MakeString (Model.Category)
 
 module Category = struct
   open Model
@@ -37,7 +16,9 @@ module Category = struct
     let options =
       Category.(
         List.map all ~f:(fun t ->
-          option ~a:[ a_value (show t) ] (txt @@ show t)))
+          option
+            ~a:[ a_value (CategoryStorage.encode t |> Result.ok_or_failwith) ]
+            (txt @@ show t)))
     in
     select
       ~a:[ a_class [ "select"; "select-bordered" ]; a_id name; a_name name ]
@@ -189,7 +170,7 @@ let post_form request =
         ; make_input ~name:"description" ~text:"Description:" ~input_type:`Text
         ; div
             ~a:[ a_class [ "mb-6" ] ]
-            [ CategoryImpl.make_select ~name:"category" () ]
+            [ Category.make_select ~name:"category" () ]
         ; button
             ~a:[ a_button_type `Submit; a_class [ "btn" ] ]
             [ txt "Submit This" ]

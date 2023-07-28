@@ -1,5 +1,5 @@
 module type S = sig
-  type t [@@deriving enumerate, show { with_path = false }]
+  type t [@@deriving yojson, show { with_path = false }]
 
   val name : string
 end
@@ -10,7 +10,7 @@ module Category = struct
     | Article
     | Website
     | Twitch
-  [@@deriving enumerate, show { with_path = false }]
+  [@@deriving enumerate, yojson, show { with_path = false }]
 
   let name = "category"
 end

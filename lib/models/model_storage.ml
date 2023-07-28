@@ -41,3 +41,13 @@ module Make (M : S) = struct
   let ty = Caqti_type.custom ~encode ~decode (to_caqti_storage storage)
   let petrol_type = Petrol.Type.custom ~ty ~repr:name
 end
+
+module MakeString (M : Model.S) = struct
+  include Make (struct
+    include M
+    include Storage.StringStorage
+
+    let encode t = Ok (to_yojson t |> Yojson.Safe.to_string)
+    let decode s = Yojson.Safe.from_string s |> of_yojson
+  end)
+end

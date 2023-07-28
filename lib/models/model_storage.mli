@@ -38,3 +38,14 @@ module Make (M : S) : sig
   val decode : s -> (t, string) result
   val petrol_type : t Petrol.Type.t
 end
+
+module MakeString (M : Model.S) : sig
+  type t = M.t
+  val show : t -> string
+
+  type s = string
+
+  val encode : t -> (s, string) result
+  val decode : s -> (t, string) result
+  val petrol_type : t Petrol.Type.t
+end

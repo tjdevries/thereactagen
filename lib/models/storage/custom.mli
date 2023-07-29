@@ -30,6 +30,16 @@ module type S = sig
   val decode : s -> (t, string) result
 end
 
+(* TODO: How can I make this work? *)
+(* I want to both of the Makes to do this *)
+(* module type CustomStorage = sig *)
+(*   type t *)
+(*   type s *)
+(*   val encode : t -> (s, string) result *)
+(*   val decode : s -> (t, string) result *)
+(*   val petrol_type : t Petrol.Type.t *)
+(* end *)
+
 module Make (M : S) : sig
   type t = M.t
   type s = M.s
@@ -39,7 +49,7 @@ module Make (M : S) : sig
   val petrol_type : t Petrol.Type.t
 end
 
-module MakeString (M : Model.S) : sig
+module MakeJSON (M : Model.S) : sig
   type t = M.t
   val show : t -> string
 

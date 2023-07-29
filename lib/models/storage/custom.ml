@@ -42,7 +42,7 @@ module Make (M : S) = struct
   let petrol_type = Petrol.Type.custom ~ty ~repr:name
 end
 
-module MakeString (M : Model.S) = struct
+module MakeJSON (M : Model.S) = struct
   include Make (struct
     include M
     include Storage.StringStorage

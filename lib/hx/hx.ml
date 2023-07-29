@@ -51,6 +51,8 @@ let get = function
   | `Get link -> Tyxml.Html.Unsafe.string_attrib "hx-get" link
 ;;
 
+let put link = Tyxml.Html.Unsafe.string_attrib "hx-put" link
+
 module Example = struct
   let get = `Get "/example/"
   let post = `Post "/example/"
@@ -83,7 +85,9 @@ module TargetType = struct
 end
 
 (** Typesafe hx-target wrapper *)
-let target t = Tyxml.Html.Unsafe.string_attrib "hx-target" (TargetType.to_string t)
+let target t =
+  Tyxml.Html.Unsafe.string_attrib "hx-target" (TargetType.to_string t)
+;;
 
 (** hx-select. Select the content to swap into the page *)
 let select sel = Tyxml.Html.Unsafe.string_attrib "hx-select" sel
@@ -189,7 +193,8 @@ let swap ?transition ?swap ?settle ?scroll ?show ?focus_scroll attr =
   let open SwapType in
   to_attr
     { attr
-    ; modifiers = Modifiers.create ~transition ~swap ~settle ~scroll ~show ~focus_scroll
+    ; modifiers =
+        Modifiers.create ~transition ~swap ~settle ~scroll ~show ~focus_scroll
     }
 ;;
 
@@ -222,16 +227,16 @@ end
 (* TODO: hx-swap-oob? I don't think I understand. Need to look at some more examples. *)
 
 (* Misc Attributes *)
-let boost status = Tyxml.Html.Unsafe.string_attrib "hx-boost" (Bool.to_string status)
+let boost status =
+  Tyxml.Html.Unsafe.string_attrib "hx-boost" (Bool.to_string status)
+;;
 
 let push_url status =
   Tyxml.Html.Unsafe.string_attrib "hx-push-url" (Bool.to_string status)
 ;;
 
-let indicator elt =
-  let _ = elt in
-  assert false
-;;
+let include_ link = Tyxml.Html.Unsafe.string_attrib "hx-include" link
+let indicator elt = Tyxml.Html.Unsafe.string_attrib "hx-indicator" elt
 
 (* TODO: hx-on. Would be very cool to use melange and encode the function name into some script:
           https://htmx.org/attributes/hx-on/ *)
@@ -246,7 +251,10 @@ module Headers = struct
 
   let is_htmx req = htmx_truthy_header "HX-Request" req
   let is_boosted req = htmx_truthy_header "HX-Boosted" req
-  let is_history_restore req = htmx_truthy_header "HX-History-Restore-Request" req
+
+  let is_history_restore req =
+    htmx_truthy_header "HX-History-Restore-Request" req
+  ;;
 
   (** This will contain the user response to an hx-prompt *)
   let get_prompt req = Dream.headers req "HX-Prompt" |> List.hd

@@ -1,3 +1,9 @@
+let get_form request =
+  match%lwt Dream.form request with
+  | `Ok form_data -> Lwt.return_ok form_data
+  | _ -> Lwt.return_error `Missing_form
+;;
+
 open Base
 open Lwt_result.Syntax
 
@@ -5,26 +11,8 @@ let schema = Schema.schema
 
 open Petrol
 open Petrol.Sqlite3
-module CategoryStorage = Model_storage.MakeString (Model.Category)
-
-module Category = struct
-  open Model
-  include CategoryStorage
-
-  let make_select ~name () =
-    let open Tyxml.Html in
-    let options =
-      Category.(
-        List.map all ~f:(fun t ->
-          option
-            ~a:[ a_value (CategoryStorage.encode t |> Result.ok_or_failwith) ]
-            (txt @@ show t)))
-    in
-    select
-      ~a:[ a_class [ "select"; "select-bordered" ]; a_id name; a_name name ]
-      options
-  ;;
-end
+module Category = Types.Category
+module Status = Types.Status
 
 let base_url = "/suggestion"
 
@@ -36,15 +24,35 @@ type t =
   ; url : string
   ; description : string
   ; category : Category.t
+  ; status : Status.t
   }
 [@@deriving combust ~name:"suggestions"]
 
-let list_all db =
+let make_filters xs =
+  List.map xs ~f:(fun item -> Expr.(f_status = vl ~ty:Status.petrol_type item))
+  |> List.reduce ~f:Expr.( || )
+  |> Option.value ~default:Expr.(false_)
+;;
+
+let resolved_expr =
+  List.map Types.Status.resolved ~f:(fun item ->
+    Expr.(f_status = vl ~ty:Status.petrol_type item))
+  |> List.reduce ~f:Expr.( || )
+  |> Option.value ~default:Expr.(false_)
+;;
+
+let unresolved_expr = Expr.(not resolved_expr)
+
+let list_with ~filter db =
   Query.select ~from:table fields
+  |> Query.where filter
   |> Request.make_many
   |> Petrol.collect_list db
   |> Lwt_result.map (List.map ~f:decode)
 ;;
+
+let list_unresolved db = list_with ~filter:unresolved_expr db
+let list_resolved db = list_with ~filter:resolved_expr db
 
 let suggestion_row suggestion =
   let id = suggestion.id |> Int.to_string in
@@ -54,13 +62,84 @@ let suggestion_row suggestion =
     ; td [ txt suggestion.url ]
     ; td [ txt suggestion.title ]
     ; td [ txt suggestion.description ]
+    ; td [ txt (suggestion.category |> Category.show) ]
+    ; td [ txt (suggestion.status |> Status.show) ]
     ]
 ;;
 
+let spinner () =
+  let open Tyxml.Html in
+  img
+    ~a:[ a_class [ "htmx-indicator" ]; a_id "indicator" ]
+    ~src:
+      "https://raw.githubusercontent.com/SamHerbert/SVG-Loaders/master/svg-loaders/audio.svg"
+    ~alt:"loading"
+    ()
+;;
+
+let filter_form request =
+  let form_id = "suggestion-filter" in
+  let open Tyxml.Html in
+  let btn =
+    div
+      ~a:[ Hx.include_ ("#" ^ form_id); Hx.target (Css "#suggestion-table") ]
+      [ button
+          ~a:
+            [ a_class [ "btn"; "button" ]
+            ; Hx.post "suggestion/table/view"
+            ; Hx.indicator "#indicator"
+            ]
+          [ txt "Submit" ]
+      ]
+  in
+  let status_buttons =
+    List.map Status.all ~f:(fun status ->
+      tr
+        [ td
+            [ input
+                ~a:
+                  [ a_input_type `Checkbox
+                  ; a_name "boxes"
+                  ; a_value (status |> Status.encode |> Result.ok_or_failwith)
+                  ]
+                ()
+            ]
+        ; td [ txt (Status.show status) ]
+        ])
+  in
+  let frm =
+    div
+      [ spinner ()
+      ; form
+          ~a:[ a_id form_id ]
+          [ Dream.csrf_tag request |> Unsafe.data
+          ; table
+              ~thead:(thead [ tr [ th [ txt "" ]; th [ txt "Value" ] ] ])
+              status_buttons
+          ]
+      ]
+  in
+  div [ frm; btn ]
+;;
+
 let show_all request =
+  let* filter =
+    match%lwt get_form request with
+    | Ok form_data ->
+      (* Unix.sleep 1; *)
+      let filters =
+        List.filter_map form_data ~f:(fun (key, value) ->
+          if String.(key = "boxes")
+          then (
+            let status = Status.decode value in
+            status |> Result.ok)
+          else None)
+      in
+      make_filters filters |> Lwt.return_ok
+    | _ -> unresolved_expr |> Lwt.return_ok
+  in
   let open Lwt_result.Syntax in
-  let conn = Dream.sql request in
-  let* suggestions = conn list_all in
+  let* suggestions = Dream.sql request @@ list_with ~filter in
   let open Tyxml.Html in
   let suggestions =
     List.fold_left suggestions ~init:[] ~f:(fun acc suggestion ->
@@ -73,7 +152,17 @@ let show_all request =
       [ a_id "suggestion-table"
       ; a_class [ "table table-zebra table-pin-rows" ]
       ]
-    ~thead:(thead [ tr [ hd "id"; hd "url"; hd "title"; hd "description" ] ])
+    ~thead:
+      (thead
+         [ tr
+             [ hd "ID"
+             ; hd "URL"
+             ; hd "Title"
+             ; hd "Description"
+             ; hd "Category"
+             ; hd "Status"
+             ]
+         ])
     suggestions
   |> Lwt.return_ok
 ;;
@@ -88,12 +177,6 @@ let show_one request id =
     | None -> assert false
   in
   Lwt.return_ok text
-;;
-
-let get_form request =
-  match%lwt Dream.form request with
-  | `Ok form_data -> Lwt.return_ok form_data
-  | _ -> Lwt.return_error `Missing_form
 ;;
 
 let find_data t key =
@@ -118,27 +201,10 @@ let post_router (request : Dream.request) =
     | Ok category -> category
     | _ -> assert false
   in
-  Dream.sql request (create ~user_id ~title ~url ~description ~category)
+  Dream.sql
+    request
+    (create ~user_id ~title ~url ~description ~category ~status:Submitted)
 ;;
-
-module Shoelace = struct
-  module Unsafe = Tyxml.Html.Unsafe
-
-  let input ~name ~lbl ~input_type =
-    let open Tyxml.Html in
-    Unsafe.node
-      "sl-input"
-      ~a:
-        [ a_id name
-        ; a_name name
-        ; Unsafe.string_attrib "label" lbl
-        ; Unsafe.string_attrib "type" input_type
-        ]
-      []
-  ;;
-
-  let button ~a text = Unsafe.node "sl-button" ~a [ Tyxml.Html.txt text ]
-end
 
 let make_input ~name ~text ~input_type =
   let open Tyxml.Html in

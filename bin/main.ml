@@ -4,11 +4,13 @@ let () = Fmt.pr "Loading...@."
 
 let index request =
   let open Lwt_result.Syntax in
+  let suggestion_form = Models.Suggestion.filter_form request in
   let* suggestions = Models.Suggestion.show_all request in
   let open Tyxml.Html in
   Reactagen.Header.html
     "𝕏 TheReactagen 𝕏"
-    [ div
+    [ suggestion_form
+    ; div
         ~a:[ a_class [ "flex justify-center flex-col max-w-md mx-auto" ] ]
         [ suggestions ]
     ; div
@@ -57,7 +59,7 @@ let () =
        [ Dream.get "/" (fun request ->
            match%lwt index request with
            | Ok page -> html_to_string page |> Dream.html
-           | _ -> assert false)
+           | Error _ -> Fmt.failwith "Failed to get index")
        ; Dream.post "/user" (fun request ->
            match%lwt Models.User.post_router request with
            | Ok id -> Dream.html @@ Fmt.str "Posted: %d" id
@@ -68,6 +70,10 @@ let () =
              (match%lwt Models.Suggestion.show_one request id with
               | Ok text -> text |> elt_to_string |> Dream.response |> Lwt.return
               | _ -> assert false)
+           | _ -> assert false)
+       ; Dream.post "/suggestion/table/view" (fun request ->
+           match%lwt Models.Suggestion.show_all request with
+           | Ok res -> res |> elt_to_string |> Dream.response |> Lwt.return
            | _ -> assert false)
        ; Dream.get "/suggestion/:id" (fun request ->
            let id = Dream.param request "id" in

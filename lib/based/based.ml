@@ -26,6 +26,37 @@ let initialize uri =
       ~url:"https://teej.tv"
       ~description:"a very cool site"
       ~category:Article
+      ~status:Submitted
+      connection
+  in
+  let* _ =
+    Models.Suggestion.create
+      ~user_id
+      ~title:"KEKW joke stream"
+      ~url:"https://twitch.tv/trash_dev"
+      ~description:"No need to subscribe"
+      ~category:Website
+      ~status:Submitted
+      connection
+  in
+  let* _ =
+    Models.Suggestion.create
+      ~user_id
+      ~title:"this guy doesn't stream"
+      ~url:"https://twitch.tv/adamdotdev"
+      ~description:"Wish he would start again"
+      ~category:Website
+      ~status:Pending
+      connection
+  in
+  let* _ =
+    Models.Suggestion.create
+      ~user_id
+      ~title:"half of his podcast is good"
+      ~url:"https://twitch.tv/thdxr"
+      ~description:"tomorrow.fm"
+      ~category:Website
+      ~status:Complete
       connection
   in
   let* _ = Models.Vote.create ~suggestion_id ~user_id ~vote:1 connection in

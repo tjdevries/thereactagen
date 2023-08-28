@@ -18,15 +18,61 @@ let base_url = "/suggestion"
 
 (** A suggestion *)
 type t =
-  { id : int [@primary]
-  ; user_id : int [@foreign User.table [ User.f_id ]]
+  { id : int [@primary { auto_increment = true }]
+  ; user_id : string [@foreign User.table [ User.f_twitch_user_id ]]
   ; title : string
-  ; url : string
+  ; url : string (* TODO: Raw URL? *)
   ; description : string
   ; category : Category.t
-  ; status : Status.t
+  ; status : Status.t [@default Status.Submitted]
   }
 [@@deriving combust ~name:"suggestions"]
+
+type t_with_user =
+  { suggestion : t
+  ; twitch_display_name : string
+  }
+
+let x () =
+  let q =
+    Query.select ~from:table Expr.(User.f_twitch_display_name :: fields)
+    |> Query.join
+         ~op:Query.INNER
+         ~on:Expr.(User.f_twitch_user_id = f_user_id)
+         (Query.table User.table)
+  in
+  Fmt.pr "Example Query: %a@." Query.pp q
+;;
+
+let suggestions_with_names db =
+  Query.select ~from:table Expr.(User.f_twitch_display_name :: fields)
+  |> Query.join
+       ~op:Query.INNER
+       ~on:Expr.(User.f_twitch_user_id = f_user_id)
+       (Query.table User.table)
+  |> Request.make_many
+  |> Petrol.collect_list db
+  |> Lwt_result.map
+       (List.map ~f:(fun (twitch_display_name, rest) ->
+          { twitch_display_name; suggestion = decode rest }))
+;;
+
+let _ = x ()
+
+let list_with ~filter db =
+  Query.select ~from:table fields
+  |> Query.where filter
+  |> Request.make_many
+  |> Petrol.collect_list db
+  |> Lwt_result.map (List.map ~f:decode)
+;;
+
+let find_by_twitch_username ~twitch_display_name db =
+  let* user = User.find_by_display_name ~twitch_display_name db in
+  match user with
+  | Some user -> list_with ~filter:Expr.(f_user_id = s user.twitch_user_id) db
+  | None -> Lwt.return_ok []
+;;
 
 let make_filters xs =
   List.map xs ~f:(fun item -> Expr.(f_status = vl ~ty:Status.petrol_type item))
@@ -42,15 +88,6 @@ let resolved_expr =
 ;;
 
 let unresolved_expr = Expr.(not resolved_expr)
-
-let list_with ~filter db =
-  Query.select ~from:table fields
-  |> Query.where filter
-  |> Request.make_many
-  |> Petrol.collect_list db
-  |> Lwt_result.map (List.map ~f:decode)
-;;
-
 let list_unresolved db = list_with ~filter:unresolved_expr db
 let list_resolved db = list_with ~filter:resolved_expr db
 
@@ -122,24 +159,7 @@ let filter_form request =
   div [ frm; btn ]
 ;;
 
-let show_all request =
-  let* filter =
-    match%lwt get_form request with
-    | Ok form_data ->
-      (* Unix.sleep 1; *)
-      let filters =
-        List.filter_map form_data ~f:(fun (key, value) ->
-          if String.(key = "boxes")
-          then (
-            let status = Status.decode value in
-            status |> Result.ok)
-          else None)
-      in
-      make_filters filters |> Lwt.return_ok
-    | _ -> unresolved_expr |> Lwt.return_ok
-  in
-  let open Lwt_result.Syntax in
-  let* suggestions = Dream.sql request @@ list_with ~filter in
+let display_suggestions suggestions =
   let open Tyxml.Html in
   let suggestions =
     List.fold_left suggestions ~init:[] ~f:(fun acc suggestion ->
@@ -164,7 +184,28 @@ let show_all request =
              ]
          ])
     suggestions
-  |> Lwt.return_ok
+;;
+
+let show_all request =
+  let* filter =
+    match%lwt get_form request with
+    | Ok form_data ->
+      (* Move to two seconds when customers complain. easy customer win *)
+      (* Unix.sleep 3; *)
+      let filters =
+        List.filter_map form_data ~f:(fun (key, value) ->
+          if String.(key = "boxes")
+          then (
+            let status = Status.decode value in
+            status |> Result.ok)
+          else None)
+      in
+      make_filters filters |> Lwt.return_ok
+    | _ -> unresolved_expr |> Lwt.return_ok
+  in
+  let open Lwt_result.Syntax in
+  let* suggestions = Dream.sql request @@ list_with ~filter in
+  display_suggestions suggestions |> Lwt.return_ok
 ;;
 
 let show_one request id =
@@ -191,7 +232,8 @@ let find_data t key =
 
 let post_router (request : Dream.request) =
   let* form_data = get_form request in
-  let* user_id = Reactagen.Auth.get_user request in
+  (* let* user_id = Reactagen.Auth.get_user request in *)
+  let user_id = "1" in
   let* url = find_data form_data "url" in
   let* title = find_data form_data "title" in
   let* description = find_data form_data "description" in
@@ -201,9 +243,7 @@ let post_router (request : Dream.request) =
     | Ok category -> category
     | _ -> assert false
   in
-  Dream.sql
-    request
-    (create ~user_id ~title ~url ~description ~category ~status:Submitted)
+  Dream.sql request (create ~user_id ~title ~url ~description ~category)
 ;;
 
 let make_input ~name ~text ~input_type =

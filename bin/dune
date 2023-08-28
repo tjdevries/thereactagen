@@ -2,9 +2,25 @@
  (package reactagen)
  (public_name reactagen)
  (name main)
+ (modules main)
  (libraries
-   reactagen models views based
+   reactagen models views based twitch auth
    dream dream-livereload
+   dotenv
    tyxml fmt
    caqti-driver-sqlite3)
  (preprocess (pps ppx_let lwt_ppx)))
+
+(executable
+ (package twitch)
+ (public_name twitcher)
+ (name twitcher)
+ (modules twitcher)
+ (libraries
+   twitch models views based auth
+   dream dream-livereload
+   tyxml fmt
+   lwt cohttp-lwt-unix
+   caqti-driver-sqlite3)
+ (preprocess (pps ppx_let lwt_ppx ppx_deriving_yojson ppx_deriving.show)))
+

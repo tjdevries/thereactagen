@@ -23,8 +23,11 @@
    dream dream-livereload
    tyxml
    bos
+   dotenv
    base fmt ppx_let ppx_enumerate
-   lwt caqti caqti-lwt caqti-dynload caqti-driver-sqlite3)
+   lwt caqti caqti-lwt caqti-dynload caqti-driver-sqlite3
+   cohttp-lwt-unix)
+
  (tags
   (topics "to describe" your project)))
 
@@ -36,6 +39,17 @@
     (dune (>= "3.8.2"))
     yojson ppx_deriving_yojson
     base fmt tyxml))
+
+(package
+  (name twitch)
+  (synopsis "Twitch API Bindings")
+  (depends
+   (ocaml (>= "5.0"))
+   (dune (>= "3.8.2"))
+   base fmt
+   lwt cohttp-lwt-unix
+   yojson ppx_deriving ppx_deriving_yojson))
+
 
 (package
  (name ppx_combust)

@@ -8,7 +8,7 @@ open Petrol.Sqlite3
 
 type t =
   { suggestion_id : int [@foreign Suggestion.table [ Suggestion.f_id ]]
-  ; user_id : int [@foreign User.table [ User.f_id ]]
+  ; user_id : string [@foreign User.table [ User.f_twitch_user_id ]]
   ; vote : int
   }
 [@@deriving

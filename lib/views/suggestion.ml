@@ -1,8 +1,7 @@
 open Lwt_result.Syntax
 
-let view ~user_id ~suggestion_id request =
+let view ~suggestion_id request =
   let upvote_id = "suggestion-upvote" in
-  let _ = user_id in
   let* suggestion = Dream.sql request @@ Models.Suggestion.read suggestion_id in
   let* count = Dream.sql request @@ Models.Vote.get_vote_total ~suggestion_id in
   match suggestion with

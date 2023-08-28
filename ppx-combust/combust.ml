@@ -1,7 +1,5 @@
 open Ppxlib
 open Ast_helper
-
-(* open Ast_builder.Default *)
 open Base
 
 let deriver = "combust"
@@ -54,9 +52,20 @@ let make_pat_list ~loc labels =
 ;;
 
 module FieldUtil = struct
-  let primary_key_opt lbl =
+  let primary_key_is_autoincrement attr =
+    match attr.attr_payload with
+    | PStr [ [%stri { auto_increment = true }] ] -> true
+    | PStr [ [%stri { auto_increment = false }] ] -> false
+    | PStr [ [%stri { auto_increment = [%e? _] }] ] ->
+      Location.raise_errorf "Weird auto_increment value"
+    | PStr [ _ ] -> Location.raise_errorf "Unrecognized keys in @primary"
+    | _ -> false
+  ;;
+
+  let primary_key_opt ?(include_autoincrement = true) lbl =
     List.find lbl.pld_attributes ~f:(fun attr ->
-      String.(attr.attr_name.txt = "primary"))
+      String.(attr.attr_name.txt = "primary")
+      && (include_autoincrement || primary_key_is_autoincrement attr))
   ;;
 
   let unique_key_opt lbl =
@@ -74,7 +83,8 @@ module FieldUtil = struct
   ;;
 
   let filter_primary_key labels =
-    List.filter labels ~f:(fun lbl -> primary_key_opt lbl |> Option.is_none)
+    List.filter labels ~f:(fun lbl ->
+      primary_key_opt ~include_autoincrement:false lbl |> Option.is_none)
   ;;
 
   let get_type ~loc lbl =
@@ -197,11 +207,12 @@ let make_create ~loc labels =
   in
   let body =
     match FieldUtil.find_primary_key labels with
-    | Some _ ->
+    | Some lbl ->
+      let primary_field = LabelUtil.to_field_name lbl |> make_str_ident ~loc in
       [%expr
         fun db ->
           Query.insert ~table ~values:Expr.([%e values])
-          |> Query.returning Expr.[ f_id ]
+          |> Query.returning Expr.[ [%e primary_field] ]
           |> Request.make_one
           |> Petrol.find db
           |> Lwt_result.map fst]
@@ -214,8 +225,20 @@ let make_create ~loc labels =
   in
   let f =
     List.fold_right fields ~init:body ~f:(fun item acc ->
+      let default =
+        List.find_map item.pld_attributes ~f:(fun attr ->
+          match attr.attr_name.txt, attr.attr_payload with
+          | "default", PStr [ { pstr_desc = Pstr_eval (expr, _); pstr_loc } ] ->
+            Some expr
+          | _ -> None)
+      in
       let name = item.pld_name.txt in
-      Ast_helper.Exp.fun_ (Labelled name) None (make_pattern ~loc name) acc)
+      let arg_name =
+        match default with
+        | Some _ -> Optional name
+        | None -> Labelled name
+      in
+      Ast_helper.Exp.fun_ arg_name default (make_pattern ~loc name) acc)
   in
   let v = [%pat? create] in
   [%stri let [%p v] = [%e f]]

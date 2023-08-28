@@ -1,7 +1,6 @@
 module M = struct
   type t =
     | Submitted
-    | Reviewed
     | Pending
     | Rejected
     | Complete
@@ -10,7 +9,7 @@ module M = struct
   let name = "status"
 end
 
-include M
 include Storage.Custom.MakeJSON (M)
+include M
 
 let resolved = [ Rejected; Complete ]

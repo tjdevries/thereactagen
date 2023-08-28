@@ -1,22 +1,43 @@
 open Base
-open Lwt_result.Syntax
 
 let schema = Schema.schema
 
 open Petrol
 open Petrol.Sqlite3
 
-type t =
-  { id : int [@primary]
-  ; username : string [@unique]
-  ; display_name : string
-  ; password : string
-  }
-[@@deriving combust ~name:"users"]
+(*
 
-let find_user ~username db =
-  Query.select ~from:table fields
-  |> Query.where Expr.(f_username = s username)
+   Will probably forget i have this note..
+
+   1. We should display who made a post
+   2. We should add roles so that we can start doing things like a workflow
+      of moving suggestions from one state to another.
+   3. Need to regularly validate that this is an active OAuth token when
+      about to post something. Should then try refresh if it fails. Then
+      do auth workflow.
+
+- Subs get multiple votes (of course)
+
+
+ *)
+
+type t =
+  { twitch_user_id : string [@primary]
+  ; twitch_display_name : string
+  }
+[@@deriving show, yojson, combust ~name:"users"]
+
+let read id db =
+  Query.select fields ~from:table
+  |> Query.where Expr.(f_twitch_user_id = s id)
+  |> Request.make_zero_or_one
+  |> Petrol.find_opt db
+  |> Lwt_result.map (Option.map ~f:decode)
+;;
+
+let find_by_display_name ~twitch_display_name db =
+  Query.select fields ~from:table
+  |> Query.where Expr.(f_twitch_display_name = s twitch_display_name)
   |> Request.make_zero_or_one
   |> Petrol.find_opt db
   |> Lwt_result.map (Option.map ~f:decode)
@@ -36,14 +57,6 @@ let get_form request =
   match%lwt Dream.form request with
   | `Ok form_data -> Lwt.return_ok form_data
   | _ -> Lwt.return_error `Missing_form
-;;
-
-let post_router (request : Dream.request) =
-  let* form_data = get_form request in
-  let* username = find_data form_data "username" in
-  let* display_name = find_data form_data "display_name" in
-  let* password = find_data form_data "password" in
-  Dream.sql request (create ~username ~display_name ~password)
 ;;
 
 let make_input ~name ~text ~input_type =

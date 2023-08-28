@@ -1,5 +1,3 @@
-open Base
-
 module M = struct
   type t =
     | Video
@@ -12,10 +10,11 @@ module M = struct
   let name = "category"
 end
 
-include M
 include Storage.Custom.MakeJSON (M)
+include M
 
 let make_select ~name () =
+  let open Base in
   let open Tyxml.Html in
   let options =
     List.map all ~f:(fun t ->

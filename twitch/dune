@@ -1,0 +1,7 @@
+(library
+ (name twitch)
+ (package twitch)
+ (libraries base fmt
+   lwt cohttp-lwt-unix
+   yojson ppx_deriving ppx_deriving_yojson)
+ (preprocess (pps ppx_deriving_yojson ppx_deriving.show)))

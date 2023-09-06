@@ -1,0 +1,55 @@
+; NOTE: This file is auto-generated
+
+(executable
+ (name pp)
+ (modules pp)
+ (libraries ppx_combust ppxlib))
+
+; Checked unique.generated.ml
+; Checked pp.ml
+; Checked optional.test.ml
+; Checked unique.input.ml
+(rule
+ (targets unique.generated.ml)
+ (deps (:pp pp.exe) (:input unique.input.ml))
+ (action (progn
+          (run ./%{pp} --impl %{input} -o %{targets})
+          (run ocamlformat -i %{targets}))))
+
+(rule
+ (alias runtest)
+ (deps (file unique.generated.ml))
+ (action (diff unique.test.ml unique.generated.ml)))
+
+; Checked optional.input.ml
+(rule
+ (targets optional.generated.ml)
+ (deps (:pp pp.exe) (:input optional.input.ml))
+ (action (progn
+          (run ./%{pp} --impl %{input} -o %{targets})
+          (run ocamlformat -i %{targets}))))
+
+(rule
+ (alias runtest)
+ (deps (file optional.generated.ml))
+ (action (diff optional.test.ml optional.generated.ml)))
+
+; Checked test.generated.ml
+; Checked unique.test.ml
+; Checked pp.mli
+; Checked test.input.ml
+(rule
+ (targets test.generated.ml)
+ (deps (:pp pp.exe) (:input test.input.ml))
+ (action (progn
+          (run ./%{pp} --impl %{input} -o %{targets})
+          (run ocamlformat -i %{targets}))))
+
+(rule
+ (alias runtest)
+ (deps (file test.generated.ml))
+ (action (diff test.test.ml test.generated.ml)))
+
+; Checked dune
+; Checked test.test.ml
+; Checked pp.exe

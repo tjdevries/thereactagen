@@ -4,22 +4,27 @@ open Base
 
 let deriver = "combust"
 
-type primary_options = { auto_increment : bool }
+type primary_options =
+  { auto_increment : bool
+  ; not_null : bool
+  }
 
 let parse_options options =
   let auto_increment = ref true in
+  let not_null = ref false in
   options
   |> List.iter ~f:(fun (name, expr) ->
-       match name with
-       | "auto_increment" ->
-         auto_increment := Ppx_deriving.Arg.(get_expr ~deriver bool) expr
-       | _ ->
-         Location.raise_errorf
-           ~loc:expr.pexp_loc
-           "%s does not support option %s"
-           deriver
-           name);
-  { auto_increment = !auto_increment }
+    match name with
+    | "auto_increment" ->
+      auto_increment := Ppx_deriving.Arg.(get_expr ~deriver bool) expr
+    | "not_null" -> not_null := Ppx_deriving.Arg.(get_expr ~deriver bool) expr
+    | _ ->
+      Location.raise_errorf
+        ~loc:expr.pexp_loc
+        "%s does not support option %s"
+        deriver
+        name);
+  { auto_increment = !auto_increment; not_null = !not_null }
 ;;
 
 let make_str_const ~loc s = Exp.constant (Pconst_string (s, loc, None))
@@ -144,15 +149,17 @@ let make_field_from_label ~loc lbl =
         field
           [%e name]
           ~ty:[%e ty]
-          ~constraints:[ primary_key ~auto_increment:true () ]]
-    else [%expr field [%e name] ~ty:[%e ty] ~constraints:[ primary_key () ]]
+          ~constraints:[ primary_key ~auto_increment:true (); not_null () ]]
+    else
+      [%expr
+        field [%e name] ~ty:[%e ty] ~constraints:[ primary_key (); not_null () ]]
   | _, Some unique, _ ->
     let unique_name = make_str_const ~loc (lbl.pld_name.txt ^ "_unique") in
     [%expr
       field
         [%e name]
         ~ty:[%e ty]
-        ~constraints:[ unique ~name:[%e unique_name] () ]]
+        ~constraints:[ unique ~name:[%e unique_name] (); not_null () ]]
   | _, _, Some foreign ->
     let payload = foreign.attr_payload in
     let tbl, id =

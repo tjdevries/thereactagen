@@ -1,11 +1,3 @@
-type t =
-  { id : int [@primary { auto_increment = true }]
-  ; username : string [@unique]
-  ; display_name : string
-  ; password : string
-  }
-[@@deriving combust ~name:"users"]
-
 type suggestion =
   { id : int [@primary { auto_increment = true }]
   ; user_id : int [@foreign User.table [ User.f_id ]]

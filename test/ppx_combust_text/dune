@@ -1,16 +1,12 @@
 (executable
- (name pp)
- (modules pp)
- (libraries ppx_combust ppxlib))
+  (name gen)
+  (modules gen)
+  (libraries fmt bos base))
 
 (rule
- (targets test.actual.ml)
- (deps (:pp pp.exe) (:input test.ml))
- (action (progn
-          (run ./%{pp} --impl %{input} -o %{targets})
-          (run ocamlformat -i %{targets}))))
+ (with-stdout-to dune.snapshot.gen (run ./gen.exe)))
 
 (rule
- (alias runtest)
- (deps (file test.expected.ml) (file test.actual.ml))
- (action (diff test.expected.ml test.actual.ml)))
+ (alias snapshot)
+ (action (diff snapshots/dune dune.snapshot.gen))
+ (deps dune.snapshot.gen (source_tree snapshots)))

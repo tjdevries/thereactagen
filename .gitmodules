@@ -1,0 +1,3 @@
+[submodule "vendor/petrol"]
+	path = vendor/petrol
+	url = https://github.com/tjdevries/petrol

@@ -28,8 +28,8 @@ include struct
              "username"
              ~ty:Type.text
              ~constraints:[ unique ~name:"username_unique" (); not_null () ]
-         ; field "display_name" ~ty:Type.text
-         ; field "password" ~ty:Type.text
+         ; field "display_name" ~ty:Type.text ~constraints:[ not_null () ]
+         ; field "password" ~ty:Type.text ~constraints:[ not_null () ]
          ])
     ;;
 
@@ -79,5 +79,25 @@ include struct
     ;;
 
     let _ = read
+
+    let find_one ?(select = fields) ~where ?(decode = decode) db =
+      Query.select select ~from:table
+      |> Query.where where
+      |> Request.make_zero_or_one
+      |> Petrol.find_opt db
+      |> Lwt_result.map (Option.map ~f:decode)
+    ;;
+
+    let _ = find_one
+
+    let find_many ?(select = fields) ~where ?(decode = decode) db =
+      Query.select select ~from:table
+      |> Query.where where
+      |> Request.make_many
+      |> Petrol.collect_list db
+      |> Lwt_result.map (List.map ~f:decode)
+    ;;
+
+    let _ = find_many
   end
 end [@@ocaml.doc "@inline"] [@@merlin.hide]

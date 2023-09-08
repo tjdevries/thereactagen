@@ -1,8 +1,9 @@
+let schema = Schema.schema
+
 type t =
   { id : int [@primary]
   ; username : string option
   }
-[@@deriving combust ~name:"optional"]
 
 include struct
   let _ = fun (_ : t) -> ()
@@ -61,25 +62,5 @@ include struct
     ;;
 
     let _ = read
-
-    let find_one ?(select = fields) ~where ?(decode = decode) db =
-      Query.select select ~from:table
-      |> Query.where where
-      |> Request.make_zero_or_one
-      |> Petrol.find_opt db
-      |> Lwt_result.map (Option.map ~f:decode)
-    ;;
-
-    let _ = find_one
-
-    let find_many ?(select = fields) ~where ?(decode = decode) db =
-      Query.select select ~from:table
-      |> Query.where where
-      |> Request.make_many
-      |> Petrol.collect_list db
-      |> Lwt_result.map (List.map ~f:decode)
-    ;;
-
-    let _ = find_many
   end
 end [@@ocaml.doc "@inline"] [@@merlin.hide]

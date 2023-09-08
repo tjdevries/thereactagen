@@ -1,2 +1,6 @@
 (test
- (name reactagen))
+ (name reactagen)
+ (libraries
+   caqti-driver-sqlite3
+   reactagen models views based twitch auth lwt sqlite3 alcotest)
+ (preprocess (pps ppx_let lwt_ppx)))

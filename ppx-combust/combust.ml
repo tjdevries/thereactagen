@@ -56,6 +56,8 @@ let make_pat_list ~loc labels =
     make_pattern (LabelUtil.to_field_name lbl) ~loc)
 ;;
 
+(* type petrol_type { *)
+
 module FieldUtil = struct
   let primary_key_is_autoincrement attr =
     match attr.attr_payload with
@@ -92,34 +94,65 @@ module FieldUtil = struct
       primary_key_opt ~include_autoincrement:false lbl |> Option.is_none)
   ;;
 
+  type petrol_type =
+    { accessor : string option
+    ; ident : string
+    ; nullable : bool
+    }
+
   let get_type ~loc lbl =
-    match lbl.pld_type.ptyp_desc with
-    | Ptyp_constr ({ txt = Lident li; _ }, _) -> li, None
-    | Ptyp_constr ({ txt = Ldot (Lident li, acc); _ }, _) -> li, Some acc
-    | _ -> Location.raise_errorf ~loc:lbl.pld_loc "Unknown type in combust"
+    let rec get_type' ~nullable typ =
+      begin
+        match typ.ptyp_desc with
+        | Ptyp_constr ({ txt = Lident "option"; _ }, [ typ ]) ->
+          get_type' ~nullable:true typ
+        | Ptyp_constr ({ txt = Lident li; _ }, _) ->
+          { ident = li; accessor = None; nullable }
+        | Ptyp_constr ({ txt = Ldot (Lident li, acc); _ }, _) ->
+          { ident = li; accessor = Some acc; nullable }
+        | _ -> Location.raise_errorf ~loc:lbl.pld_loc "Unknown type in combust"
+      end
+    in
+    get_type' ~nullable:false lbl.pld_type
   ;;
 
+  let is_nullable ~loc lbl = (get_type ~loc lbl).nullable
+
   let petrol_type ~loc lbl =
-    let ident, str =
-      match get_type ~loc lbl with
-      | "int", _ -> "Type", "int"
-      | "string", _ -> "Type", "text"
-      | ty, Some _ -> ty, "petrol_type"
-      | ty, None ->
-        Location.raise_errorf ~loc:lbl.pld_loc "Unknown petrol type: %s" ty
+    let long_ident ty accessor =
+      make_ident ~loc @@ Longident.(Ldot (Lident ty, accessor))
     in
-    Longident.(Ldot (Lident ident, str))
+    let ty = get_type ~loc lbl in
+    let ident =
+      match ty with
+      | { ident = ty; accessor = Some "t"; _ } -> long_ident ty "petrol_type"
+      | { ident = "int"; _ } -> long_ident "Type" "int"
+      | { ident = "string"; _ } -> long_ident "Type" "text"
+      | { ident = ty; _ } ->
+        (match lbl.pld_type.ptyp_desc with
+         | Ptyp_constr (_, types_) ->
+           Location.raise_errorf
+             ~loc:lbl.pld_loc
+             "Unknown petrol type: %s %d"
+             ty
+             (List.length types_)
+         | _ ->
+           Location.raise_errorf ~loc:lbl.pld_loc "Unknown petrol type: %s" ty)
+    in
+    if ty.nullable then [%expr Type.null_ty [%e ident]] else ident
   ;;
 
   let petrol_type_fn ~loc lbl =
     match get_type ~loc lbl with
-    | "int", _ -> make_str_ident ~loc "i"
-    | "string", _ -> make_str_ident ~loc "s"
-    | ty, Some _ ->
+    | { ident = "int"; nullable = true; _ } -> make_str_ident ~loc "i_opt"
+    | { ident = "int"; nullable = false; _ } -> make_str_ident ~loc "i"
+    | { ident = "string"; nullable = true; _ } -> make_str_ident ~loc "s_opt"
+    | { ident = "string"; nullable = false; _ } -> make_str_ident ~loc "s"
+    | { ident = ty; accessor = Some _; _ } ->
       let ty = Longident.(Ldot (Lident ty, "petrol_type")) in
       let ty = make_ident ~loc:lbl.pld_loc ty in
       [%expr vl ~ty:[%e ty]]
-    | ty, None ->
+    | { ident = ty; _ } ->
       Location.raise_errorf ~loc:lbl.pld_loc "Unknown petrol type fn: %s" ty
   ;;
 end
@@ -129,8 +162,8 @@ let make_field_from_label ~loc lbl =
   let primary_attr = FieldUtil.primary_key_opt lbl in
   let unique_attr = FieldUtil.unique_key_opt lbl in
   let foreign_attr = FieldUtil.foreign_key_opt lbl in
-  let petrol_type = FieldUtil.petrol_type ~loc lbl in
-  let ty = make_ident ~loc petrol_type in
+  let ty = FieldUtil.petrol_type ~loc lbl in
+  let nullable = FieldUtil.is_nullable ~loc lbl in
   match primary_attr, unique_attr, foreign_attr with
   | Some primary, _, _ ->
     let payload = primary.attr_payload in
@@ -172,7 +205,8 @@ let make_field_from_label ~loc lbl =
         [%e name]
         ~ty:[%e ty]
         ~constraints:
-          [ foreign_key
+          [ not_null ()
+          ; foreign_key
               ~table:[%e tbl]
               ~columns:Expr.([%e id])
                 (* TODO: Need to make these configurable *)
@@ -180,7 +214,10 @@ let make_field_from_label ~loc lbl =
               ~on_delete:`CASCADE
               ()
           ]]
-  | _ -> [%expr field [%e name] ~ty:[%e ty]]
+  | _ ->
+    if nullable
+    then [%expr field [%e name] ~ty:[%e ty]]
+    else [%expr field [%e name] ~ty:[%e ty] ~constraints:[ not_null () ]]
 ;;
 
 let tuplify ~loc labels f =
@@ -315,6 +352,22 @@ let generate_impl ~ctxt (_rec_flag, type_decls) name constraints =
           [%%i decode]
           [%%i create]
           [%%i read]
+
+          let find_one ?(select = fields) ~where ?(decode = decode) db =
+            Query.select select ~from:table
+            |> Query.where where
+            |> Request.make_zero_or_one
+            |> Petrol.find_opt db
+            |> Lwt_result.map (Option.map ~f:decode)
+          ;;
+
+          let find_many ?(select = fields) ~where ?(decode = decode) db =
+            Query.select select ~from:table
+            |> Query.where where
+            |> Request.make_many
+            |> Petrol.collect_list db
+            |> Lwt_result.map (List.map ~f:decode)
+          ;;
         end]
       (* Location.raise_errorf ~loc "not yet implemented" *)
     | _ -> assert false)

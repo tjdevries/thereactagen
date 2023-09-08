@@ -44,12 +44,16 @@ let x () =
   Fmt.pr "Example Query: %a@." Query.pp q
 ;;
 
-let suggestions_with_names db =
+let suggestions_with_name_query () =
   Query.select ~from:table Expr.(User.f_twitch_display_name :: fields)
   |> Query.join
        ~op:Query.INNER
        ~on:Expr.(User.f_twitch_user_id = f_user_id)
        (Query.table User.table)
+;;
+
+let suggestions_with_names db =
+  suggestions_with_name_query ()
   |> Request.make_many
   |> Petrol.collect_list db
   |> Lwt_result.map
@@ -59,18 +63,10 @@ let suggestions_with_names db =
 
 let _ = x ()
 
-let list_with ~filter db =
-  Query.select ~from:table fields
-  |> Query.where filter
-  |> Request.make_many
-  |> Petrol.collect_list db
-  |> Lwt_result.map (List.map ~f:decode)
-;;
-
 let find_by_twitch_username ~twitch_display_name db =
   let* user = User.find_by_display_name ~twitch_display_name db in
   match user with
-  | Some user -> list_with ~filter:Expr.(f_user_id = s user.twitch_user_id) db
+  | Some user -> find_many ~where:Expr.(f_user_id = s user.twitch_user_id) db
   | None -> Lwt.return_ok []
 ;;
 
@@ -88,8 +84,8 @@ let resolved_expr =
 ;;
 
 let unresolved_expr = Expr.(not resolved_expr)
-let list_unresolved db = list_with ~filter:unresolved_expr db
-let list_resolved db = list_with ~filter:resolved_expr db
+let list_unresolved db = find_many ~where:unresolved_expr db
+let list_resolved db = find_many ~where:resolved_expr db
 
 let suggestion_row suggestion =
   let id = suggestion.id |> Int.to_string in
@@ -204,7 +200,7 @@ let show_all request =
     | _ -> unresolved_expr |> Lwt.return_ok
   in
   let open Lwt_result.Syntax in
-  let* suggestions = Dream.sql request @@ list_with ~filter in
+  let* suggestions = Dream.sql request @@ find_many ~where:filter in
   display_suggestions suggestions |> Lwt.return_ok
 ;;
 

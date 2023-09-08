@@ -2,24 +2,20 @@ open Base
 
 let schema = Schema.schema
 
-open Petrol
 open Petrol.Sqlite3
 
 (*
-
    Will probably forget i have this note..
 
    1. We should display who made a post
    2. We should add roles so that we can start doing things like a workflow
-      of moving suggestions from one state to another.
+   of moving suggestions from one state to another.
    3. Need to regularly validate that this is an active OAuth token when
-      about to post something. Should then try refresh if it fails. Then
-      do auth workflow.
+   about to post something. Should then try refresh if it fails. Then
+   do auth workflow.
 
-- Subs get multiple votes (of course)
-
-
- *)
+   - Subs get multiple votes (of course)
+*)
 
 type t =
   { twitch_user_id : string [@primary]
@@ -27,20 +23,8 @@ type t =
   }
 [@@deriving show, yojson, combust ~name:"users"]
 
-let read id db =
-  Query.select fields ~from:table
-  |> Query.where Expr.(f_twitch_user_id = s id)
-  |> Request.make_zero_or_one
-  |> Petrol.find_opt db
-  |> Lwt_result.map (Option.map ~f:decode)
-;;
-
 let find_by_display_name ~twitch_display_name db =
-  Query.select fields ~from:table
-  |> Query.where Expr.(f_twitch_display_name = s twitch_display_name)
-  |> Request.make_zero_or_one
-  |> Petrol.find_opt db
-  |> Lwt_result.map (Option.map ~f:decode)
+  find_one ~where:Expr.(f_twitch_display_name = s twitch_display_name) db
 ;;
 
 let find_data t key =

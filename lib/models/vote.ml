@@ -27,7 +27,7 @@ let get_vote_total ~suggestion_id db =
   |> Request.make_zero_or_one
   |> Petrol.find_opt db
   |> Lwt_result.map (fun result ->
-       match result with
-       | Some (count, _) -> count
-       | _ -> 0)
+    match result with
+    | Some (count, _) -> count
+    | _ -> 0)
 ;;

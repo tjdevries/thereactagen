@@ -39,7 +39,8 @@ include struct
              "user_id"
              ~ty:Type.int
              ~constraints:
-               [ foreign_key
+               [ not_null ()
+               ; foreign_key
                    ~table:User.table
                    ~columns:
                      (let open Expr in
@@ -89,5 +90,25 @@ include struct
     ;;
 
     let _ = read
+
+    let find_one ?(select = fields) ~where ?(decode = decode) db =
+      Query.select select ~from:table
+      |> Query.where where
+      |> Request.make_zero_or_one
+      |> Petrol.find_opt db
+      |> Lwt_result.map (Option.map ~f:decode)
+    ;;
+
+    let _ = find_one
+
+    let find_many ?(select = fields) ~where ?(decode = decode) db =
+      Query.select select ~from:table
+      |> Query.where where
+      |> Request.make_many
+      |> Petrol.collect_list db
+      |> Lwt_result.map (List.map ~f:decode)
+    ;;
+
+    let _ = find_many
   end
 end [@@ocaml.doc "@inline"] [@@merlin.hide]

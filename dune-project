@@ -20,6 +20,7 @@
  (depends
    (ocaml (>= "5.0"))
    (dune (>= "3.8.2"))
+   (alcotest :with-test)
    dream dream-livereload
    tyxml
    bos

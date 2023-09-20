@@ -18,7 +18,10 @@ include struct
         ~name:"optional"
         ~constraints:[]
         (let open Schema in
-         [ field "id" ~ty:Type.int ~constraints:[ primary_key (); not_null () ]
+         [ field
+             "id"
+             ~ty:Type.int
+             ~constraints:[ primary_key ~on_conflict:`REPLACE (); not_null () ]
          ; field "username" ~ty:(Type.null_ty Type.text)
          ])
     ;;
@@ -61,6 +64,17 @@ include struct
     ;;
 
     let _ = read
+
+    let delete id db =
+      Query.delete ~from:table
+      |> Query.where
+           (let open Expr in
+            f_id = i id)
+      |> Request.make_zero
+      |> Petrol.exec db
+    ;;
+
+    let _ = delete
 
     let find_one ?(select = fields) ~where ?(decode = decode) db =
       Query.select select ~from:table

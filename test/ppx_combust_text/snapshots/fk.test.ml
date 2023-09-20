@@ -1,10 +1,11 @@
-type suggestion =
-  { id : int [@primary { auto_increment = true }]
-  ; user_id : int [@foreign User.table [ User.f_id ]]
+type t =
+  { suggestion_id : int [@foreign Suggestion.table [ Suggestion.f_id ]]
+  ; user_id : string [@foreign User.table [ User.f_twitch_user_id ]]
+  ; vote : int
   }
 [@@deriving
   combust
-    ~name:"suggestions"
+    ~name:"votes"
     ~constraints:
       [ Schema.table_primary_key
           ~name:"unique_suggestion_and_post"
@@ -13,7 +14,7 @@ type suggestion =
       ]]
 
 include struct
-  let _ = fun (_ : suggestion) -> ()
+  let _ = fun (_ : t) -> ()
 
   include struct
     open Base
@@ -23,7 +24,7 @@ include struct
     let table, fields =
       StaticSchema.declare_table
         schema
-        ~name:"suggestions"
+        ~name:"votes"
         ~constraints:
           [ Schema.table_primary_key
               ~name:"unique_suggestion_and_post"
@@ -32,75 +33,68 @@ include struct
           ]
         (let open Schema in
          [ field
-             "id"
+             "suggestion_id"
              ~ty:Type.int
-             ~constraints:[ primary_key ~auto_increment:true (); not_null () ]
+             ~constraints:
+               [ not_null ()
+               ; foreign_key
+                   ~table:Suggestion.table
+                   ~columns:
+                     (let open Expr in
+                      [ Suggestion.f_id ])
+                   ~on_update:`RESTRICT
+                   ~on_delete:`CASCADE
+                   ()
+               ]
          ; field
              "user_id"
-             ~ty:Type.int
+             ~ty:Type.text
              ~constraints:
                [ not_null ()
                ; foreign_key
                    ~table:User.table
                    ~columns:
                      (let open Expr in
-                      [ User.f_id ])
+                      [ User.f_twitch_user_id ])
                    ~on_update:`RESTRICT
                    ~on_delete:`CASCADE
                    ()
                ]
+         ; field "vote" ~ty:Type.int ~constraints:[ not_null () ]
          ])
     ;;
 
     let _ = table
     and _ = fields
 
-    let Expr.[ f_id; f_user_id ] = fields
+    let Expr.[ f_suggestion_id; f_user_id; f_vote ] = fields
 
-    let _ = f_id
+    let _ = f_suggestion_id
     and _ = f_user_id
+    and _ = f_vote
 
-    let decode (id, (user_id, ())) = { id; user_id }
+    let decode (suggestion_id, (user_id, (vote, ()))) =
+      { suggestion_id; user_id; vote }
+    ;;
+
     let _ = decode
 
-    let create ~user_id db =
+    let create ~suggestion_id ~user_id ~vote db =
       Query.insert
         ~table
         ~values:
           (let open Expr in
-           [ f_user_id := i user_id ])
-      |> Query.returning
-           (let open Expr in
-            [ f_id ])
-      |> Request.make_one
-      |> Petrol.find db
-      |> Lwt_result.map fst
-    ;;
-
-    let _ = create
-
-    let read id db =
-      Query.select ~from:table fields
-      |> Query.where
-           (let open Expr in
-            f_id = i id)
-      |> Request.make_zero_or_one
-      |> Petrol.find_opt db
-      |> Lwt_result.map (Option.map ~f:decode)
-    ;;
-
-    let _ = read
-
-    let delete id db =
-      Query.delete ~from:table
-      |> Query.where
-           (let open Expr in
-            f_id = i id)
+           [ f_suggestion_id := i suggestion_id
+           ; f_user_id := s user_id
+           ; f_vote := i vote
+           ])
       |> Request.make_zero
       |> Petrol.exec db
     ;;
 
-    let _ = delete
+    let _ = create
+    let () = ()
+    let () = ()
 
     let find_one ?(select = fields) ~where ?(decode = decode) db =
       Query.select select ~from:table

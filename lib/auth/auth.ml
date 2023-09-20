@@ -16,19 +16,17 @@ type valid_user =
 [@@deriving show, yojson { strict = false }]
 
 (*
+   Step 1:
 
-Step 1:
+   Check the session, do i have `twitch_auth` and `twitch_refresh`?
+   If act like logged in until taking an action (so view-only basically?)
 
-Check the session, do i have `twitch_auth` and `twitch_refresh`?
-If act like logged in until taking an action (so view-only basically?)
-
-https://id.twitch.tv/oauth2/authorize
-    ?response_type=code
-    &client_id=hof5gwx0su6owfnys0nyan9c87zr6t
-    &redirect_uri=http://localhost:3000
-    &scope=channel%3Amanage%3Apolls+channel%3Aread%3Apolls
-    &state=c3ab8aa609ea11e793ae92361f002671
-
+   https://id.twitch.tv/oauth2/authorize
+   ?response_type=code
+   &client_id=hof5gwx0su6owfnys0nyan9c87zr6t
+   &redirect_uri=http://localhost:3000
+   &scope=channel%3Amanage%3Apolls+channel%3Aread%3Apolls
+   &state=c3ab8aa609ea11e793ae92361f002671
 *)
 
 let get_authorize_uri ~client_id ~redirect_uri ~scope ~state =
@@ -44,10 +42,10 @@ let get_authorize_uri ~client_id ~redirect_uri ~scope ~state =
 ;;
 
 (*
-  http://localhost:3000/
-      ?code=gulfwdmys5lsm6qyz4xiz9q32l10
-      &scope=channel%3Amanage%3Apolls+channel%3Aread%3Apolls
-      &state=c3ab8aa609ea11e793ae92361f002671
+   http://localhost:3000/
+   ?code=gulfwdmys5lsm6qyz4xiz9q32l10
+   &scope=channel%3Amanage%3Apolls+channel%3Aread%3Apolls
+   &state=c3ab8aa609ea11e793ae92361f002671
 *)
 
 let send_post ~(client : Twitch.client) ~code ~redirect_uri =
@@ -80,10 +78,10 @@ let set_cookie request auth =
 let get_cookie request =
   Dream.session_field request valid_user_key
   |> Option.find_map ~f:(fun str ->
-       let x = str |> Yojson.Safe.from_string |> valid_user_of_yojson in
-       match x with
-       | Ok x -> Some x
-       | _ -> None)
+    let x = str |> Yojson.Safe.from_string |> valid_user_of_yojson in
+    match x with
+    | Ok x -> Some x
+    | _ -> None)
 ;;
 
 let drop_cookie response request =
@@ -110,6 +108,25 @@ let validate_request access_token =
   | Error err -> Fmt.failwith "Could not decode user_auth: %s %s" err body
 ;;
 
+let get_user_info client_id access_token validated_user =
+  let uri = Uri.of_string "https://api.twitch.tv/helix/users" in
+  let uri = Uri.with_query' uri [ "id", validated_user ] in
+  let* resp, body =
+    Client.get
+      ~headers:
+        (Cohttp.Header.of_list
+           [ "Authorization", "Bearer " ^ access_token; "Client-Id", client_id ])
+      uri
+  in
+  let* body = Cohttp_lwt.Body.to_string body in
+  match
+    Yojson.Safe.from_string body |> Twitch.twitch_user_request_of_yojson
+  with
+  | Ok { data = [ user ] } -> user |> Lwt.return
+  | Ok _ -> Fmt.failwith "Expected single user response but got multiple"
+  | Error err -> Fmt.failwith "Could not decode user_auth: %s %s" err body
+;;
+
 let handle_redirect request client =
   let code = Dream.query request "code" in
   let scope = Dream.query request "scope" in
@@ -123,8 +140,43 @@ let handle_redirect request client =
     let* user_model =
       Dream.sql request @@ Models.User.read validated.validated_user
     in
+    let* user_info =
+      get_user_info
+        client.client_id
+        user_auth.access_token
+        validated.validated_user
+    in
+    Fmt.pr "%s@." (Twitch.show_twitch_user user_info);
+    let save_and_return () =
+      Fmt.pr "CALLIN SAVE AND RETURN: %s@." user_info.profile_image_url;
+      let* user_id =
+        Dream.sql request
+        @@ Models.User.create
+             ~twitch_user_id:validated.validated_user
+             ~twitch_display_name:validated.validated_login
+             ~twitch_profile_url:(Some user_info.profile_image_url)
+      in
+      let _ =
+        match user_id with
+        | Ok _ -> ()
+        | Error err ->
+          Fmt.failwith "Failed to save user: %a@." Caqti_error.pp err
+      in
+      Models.User.
+        { twitch_user_id = validated.validated_user
+        ; twitch_display_name = validated.validated_login
+        ; twitch_profile_url = Some user_info.profile_image_url
+        }
+      |> Lwt.return
+    in
     let* user_model =
       match user_model with
+      | Ok (Some { twitch_profile_url; _ })
+        when not
+             @@ Option.equal
+                  String.equal
+                  twitch_profile_url
+                  (Some user_info.profile_image_url) -> save_and_return ()
       | Ok (Some user_model) -> user_model |> Lwt.return
       | Ok None ->
         let* _ =
@@ -132,10 +184,12 @@ let handle_redirect request client =
           @@ Models.User.create
                ~twitch_user_id:validated.validated_user
                ~twitch_display_name:validated.validated_login
+               ~twitch_profile_url:(Some user_info.profile_image_url)
         in
         Models.User.
           { twitch_user_id = validated.validated_user
           ; twitch_display_name = validated.validated_login
+          ; twitch_profile_url = Some user_info.profile_image_url
           }
         |> Lwt.return
       | _ -> Fmt.failwith "couldn't find user LUL"
@@ -152,8 +206,7 @@ let handle_redirect request client =
 ;;
 
 (*
-
-Step 2:
+   Step 2:
 
 To get the tokens, send an HTTP POST request to https://id.twitch.tv/oauth2/token. Set the following x-www-form-urlencoded parameters in the body of the POST.
 
@@ -190,5 +243,4 @@ user about to submit suggestion
   (also try refresh)
 If good, then allow submit
 otherwise, new session and send to auth workflow
-
 *)

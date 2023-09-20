@@ -5,8 +5,7 @@
  (modules pp)
  (libraries ppx_combust ppxlib))
 
-; Checked unique.generated.ml
-; Checked pp.ml
+; Checked test.generated.ml
 ; Checked optional.test.ml
 ; Checked unique.input.ml
 (rule
@@ -34,9 +33,27 @@
  (deps (file optional.generated.ml))
  (action (diff optional.test.ml optional.generated.ml)))
 
-; Checked test.generated.ml
+; Checked fk.input.ml
+(rule
+ (targets fk.generated.ml)
+ (deps (:pp pp.exe) (:input fk.input.ml))
+ (action (progn
+          (run ./%{pp} --impl %{input} -o %{targets})
+          (run ocamlformat -i %{targets}))))
+
+(rule
+ (alias runtest)
+ (deps (file fk.generated.ml))
+ (action (diff fk.test.ml fk.generated.ml)))
+
+; Checked optional.generated.ml
+; Checked unique.generated.ml
+; Checked pp.ml
+; Checked dune
 ; Checked unique.test.ml
+; Checked pp.exe
 ; Checked pp.mli
+; Checked test.test.ml
 ; Checked test.input.ml
 (rule
  (targets test.generated.ml)
@@ -50,6 +67,4 @@
  (deps (file test.generated.ml))
  (action (diff test.test.ml test.generated.ml)))
 
-; Checked dune
-; Checked test.test.ml
-; Checked pp.exe
+; Checked fk.test.ml

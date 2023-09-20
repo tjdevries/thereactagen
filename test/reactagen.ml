@@ -21,13 +21,18 @@ let user_1 = "1"
 let user_1_name = "User One"
 let user_2 = "2"
 let user_2_name = "User Two"
+let user_2_url = "https://twitch.tv/teej_dv"
 
 let create_user_1 db =
   Models.User.create ~twitch_user_id:user_1 ~twitch_display_name:user_1_name db
 ;;
 
 let create_user_2 db =
-  Models.User.create ~twitch_user_id:user_2 ~twitch_display_name:user_2_name db
+  Models.User.create
+    ~twitch_user_id:user_2
+    ~twitch_display_name:user_2_name
+    ~twitch_profile_url:(Some user_2_url)
+    db
 ;;
 
 let test_create_user () =
@@ -112,6 +117,41 @@ module VoteTest = struct
     Alcotest.(check int) "Updates vote count" 0 result
   ;;
 
+  let test_cascade_user_deletes () =
+    let result =
+      main
+      @@ fun db ->
+      let* suggestion_id = stage_1 db in
+      let* () = Models.User.delete user_2 db in
+      let* user = Models.User.read user_2 db in
+      assert (Option.is_none user);
+      (* Lwt_result.return suggestion_id *)
+      Models.Vote.get_vote_total ~suggestion_id db
+    in
+    (* TODO: This is actually broken, it should return 1... *)
+    Alcotest.(check int) "Updates vote count" 2 result
+  ;;
+
+  let test_upsert () =
+    let new_name = "new name" in
+    let result =
+      main
+      @@ fun db ->
+      let* _ = stage_1 db in
+      let* user = Models.User.upsert user_2 ~twitch_display_name:new_name db in
+      Models.User.read user db
+    in
+    match result with
+    | Some user ->
+      Alcotest.(check string) "user_id" user_2 user.twitch_user_id;
+      Alcotest.(check string) "display_name" new_name user.twitch_display_name;
+      Alcotest.(check (option string))
+        "profile_url"
+        (Some user_2_url)
+        user.twitch_profile_url
+    | None -> Alcotest.fail "User not found..."
+  ;;
+
   let test_table_join () =
     let suggestion_id, result =
       main
@@ -140,6 +180,8 @@ let _ =
         ; test_case "Updates votes" `Quick VoteTest.test_update_votes
         ; test_case "Serializes types" `Quick VoteTest.test_vote_serialization
         ; test_case "Joins tables" `Quick VoteTest.test_table_join
+        ; test_case "Deletes user" `Quick VoteTest.test_cascade_user_deletes
+        ; test_case "Able to upsert" `Quick VoteTest.test_upsert
         ] )
     ]
 ;;

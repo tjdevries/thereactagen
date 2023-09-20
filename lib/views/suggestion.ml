@@ -34,10 +34,10 @@ let view ~suggestion_id request =
       ]
       |> List.flatten
     in
-    (* ; span ~a:[ a_id upvote_id ] [ txt (Fmt.str "%d" count) ] *)
     Reactagen.Header.html
       suggestion.title
-      [ div
+      [ Navbar.nav_elt [ Navbar.nav_item "/" (txt "Home") ]
+      ; div
           ~a:[ a_class [ "flex justify-center flex-col max-w-md mx-auto" ] ]
           [ div
               ~a:[ a_class [ "border-2 border-white rounded-lg mt-8" ] ]

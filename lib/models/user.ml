@@ -2,6 +2,7 @@ open Base
 
 let schema = Schema.schema
 
+open Petrol
 open Petrol.Sqlite3
 
 (*
@@ -20,8 +21,31 @@ open Petrol.Sqlite3
 type t =
   { twitch_user_id : string [@primary]
   ; twitch_display_name : string
+  ; twitch_profile_url : string option [@default None]
   }
 [@@deriving show, yojson, combust ~name:"users"]
+
+let upsert twitch_user_id ?twitch_display_name ?twitch_profile_url db =
+  let _ = twitch_profile_url in
+  Query.upsert
+    ~table
+    ~values:
+      (Expr.[ f_twitch_user_id := s twitch_user_id ]
+       @ Option.value_map
+           twitch_display_name
+           ~default:[]
+           ~f:(fun display_name ->
+             Expr.[ f_twitch_display_name := s display_name ]))
+    ~on_conflict:
+      (Some
+         (`DO_UPDATE
+           ( "twitch_user_id"
+           , "SET twitch_display_name = excluded.twitch_display_name" )))
+  |> Query.returning Expr.[ f_twitch_user_id ]
+  |> Request.make_one
+  |> Petrol.find db
+  |> Lwt_result.map fst
+;;
 
 let find_by_display_name ~twitch_display_name db =
   find_one ~where:Expr.(f_twitch_display_name = s twitch_display_name) db

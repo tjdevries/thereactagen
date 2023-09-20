@@ -24,6 +24,17 @@ module Oauth = struct
   ;;
 end
 
+type twitch_user =
+  { id : string
+  ; login : string
+  ; display_name : string
+  ; profile_image_url : string
+  }
+[@@deriving show, yojson { strict = false }]
+
+type twitch_user_request = { data : twitch_user list }
+[@@deriving show, yojson { strict = false }]
+
 type user =
   { user_id : string [@key "id"]
   ; login : string

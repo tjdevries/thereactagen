@@ -80,6 +80,17 @@ include struct
 
     let _ = read
 
+    let delete id db =
+      Query.delete ~from:table
+      |> Query.where
+           (let open Expr in
+            f_id = i id)
+      |> Request.make_zero
+      |> Petrol.exec db
+    ;;
+
+    let _ = delete
+
     let find_one ?(select = fields) ~where ?(decode = decode) db =
       Query.select select ~from:table
       |> Query.where where

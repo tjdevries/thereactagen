@@ -102,16 +102,14 @@ module FieldUtil = struct
 
   let get_type ~loc lbl =
     let rec get_type' ~nullable typ =
-      begin
-        match typ.ptyp_desc with
-        | Ptyp_constr ({ txt = Lident "option"; _ }, [ typ ]) ->
-          get_type' ~nullable:true typ
-        | Ptyp_constr ({ txt = Lident li; _ }, _) ->
-          { ident = li; accessor = None; nullable }
-        | Ptyp_constr ({ txt = Ldot (Lident li, acc); _ }, _) ->
-          { ident = li; accessor = Some acc; nullable }
-        | _ -> Location.raise_errorf ~loc:lbl.pld_loc "Unknown type in combust"
-      end
+      match typ.ptyp_desc with
+      | Ptyp_constr ({ txt = Lident "option"; _ }, [ typ ]) ->
+        get_type' ~nullable:true typ
+      | Ptyp_constr ({ txt = Lident li; _ }, _) ->
+        { ident = li; accessor = None; nullable }
+      | Ptyp_constr ({ txt = Ldot (Lident li, acc); _ }, _) ->
+        { ident = li; accessor = Some acc; nullable }
+      | _ -> Location.raise_errorf ~loc:lbl.pld_loc "Unknown type in combust"
     in
     get_type' ~nullable:false lbl.pld_type
   ;;
@@ -185,7 +183,10 @@ let make_field_from_label ~loc lbl =
           ~constraints:[ primary_key ~auto_increment:true (); not_null () ]]
     else
       [%expr
-        field [%e name] ~ty:[%e ty] ~constraints:[ primary_key (); not_null () ]]
+        field
+          [%e name]
+          ~ty:[%e ty]
+          ~constraints:[ primary_key ~on_conflict:`REPLACE (); not_null () ]]
   | _, Some unique, _ ->
     let unique_name = make_str_const ~loc (lbl.pld_name.txt ^ "_unique") in
     [%expr
@@ -288,6 +289,67 @@ let make_create ~loc labels =
   [%stri let [%p v] = [%e f]]
 ;;
 
+(* let make_upsert ~loc labels = *)
+(*   let fields = FieldUtil.filter_primary_key labels in *)
+(*   let values = *)
+(*     constructify_exp ~loc fields (fun lbl -> *)
+(*       let field_name = LabelUtil.to_field_name lbl |> make_str_ident ~loc in *)
+(*       let petrol_type = FieldUtil.petrol_type_fn ~loc lbl in *)
+(*       let param_name = LabelUtil.to_param_name lbl |> make_str_ident ~loc in *)
+(*       [%expr [%e field_name] := [%e petrol_type] [%e param_name]]) *)
+(*   in *)
+(*   let body = *)
+(*     match FieldUtil.find_primary_key labels with *)
+(*     | Some lbl -> *)
+(*       let primary_field = LabelUtil.to_field_name lbl |> make_str_ident ~loc in *)
+(*       [%expr *)
+(*         fun db -> *)
+(*           let values = ref [ f_twitch_user_id ] in *)
+(*           if Option.is_some twitch_display_name *)
+(*           then values := Expr.(f_twitch_display_name :: !values; *)
+(*           (* if Option.is_some twitch_profile_url *) *)
+(*           (* then values := f_twitch_profile_url :: !values; *) *)
+(*           Query.upsert *)
+(*             ~table *)
+(*             ~values:!values *)
+(*             ~on_conflict: *)
+(*               (Some *)
+(*                  (`DO_UPDATE *)
+(*                    ( "twitch_user_id" *)
+(*                    , "SET twitch_display_name = excluded.twitch_display_name \ *)
+                      (*                       broken" ))) *)
+(*           |> Query.returning Expr.[ [%e primary_field] ] *)
+(*           |> Request.make_one *)
+(*           |> Petrol.find db *)
+(*           |> Lwt_result.map fst] *)
+(*     | None -> *)
+(*       [%expr *)
+(*         fun db -> *)
+(*           Query.insert ~table ~values:Expr.([%e values]) *)
+(*           |> Request.make_zero *)
+(*           |> Petrol.exec db] *)
+(*   in *)
+(*   let f = *)
+(*     List.fold_right fields ~init:body ~f:(fun item acc -> *)
+(*       let default = *)
+(*         List.find_map item.pld_attributes ~f:(fun attr -> *)
+(*           match attr.attr_name.txt, attr.attr_payload with *)
+(*           | "default", PStr [ { pstr_desc = Pstr_eval (expr, _); pstr_loc } ] -> *)
+(*             Some expr *)
+(*           | _ -> None) *)
+(*       in *)
+(*       let name = item.pld_name.txt in *)
+(*       let arg_name = *)
+(*         match default with *)
+(*         | Some _ -> Optional name *)
+(*         | None -> Labelled name *)
+(*       in *)
+(*       Ast_helper.Exp.fun_ arg_name default (make_pattern ~loc name) acc) *)
+(*   in *)
+(*   let v = [%pat? upsert] in *)
+(*   [%stri let [%p v] = [%e f]] *)
+(* ;; *)
+
 let make_read ~loc labels =
   match FieldUtil.find_primary_key labels with
   | Some primary_key ->
@@ -302,6 +364,23 @@ let make_read ~loc labels =
         |> Request.make_zero_or_one
         |> Petrol.find_opt db
         |> Lwt_result.map (Option.map ~f:decode)
+      ;;]
+  | _ -> [%stri let () = ()]
+;;
+
+let make_delete ~loc labels =
+  match FieldUtil.find_primary_key labels with
+  | Some primary_key ->
+    let field_name =
+      LabelUtil.to_field_name primary_key |> make_str_ident ~loc
+    in
+    let fun_name = FieldUtil.petrol_type_fn ~loc primary_key in
+    [%stri
+      let delete id db =
+        Query.delete ~from:table
+        |> Query.where Expr.([%e field_name] = [%e fun_name] id)
+        |> Request.make_zero
+        |> Petrol.exec db
       ;;]
   | _ -> [%stri let () = ()]
 ;;
@@ -330,7 +409,9 @@ let generate_impl ~ctxt (_rec_flag, type_decls) name constraints =
       let field_destructure = [%stri let Expr.([%p names]) = fields] in
       let decode = make_decode ~loc labels in
       let create = make_create ~loc labels in
+      (* let upsert = make_upsert ~loc labels in *)
       let read = make_read ~loc labels in
+      let delete = make_delete ~loc labels in
       [%stri
         include struct
           open Base
@@ -351,7 +432,10 @@ let generate_impl ~ctxt (_rec_flag, type_decls) name constraints =
           [%%i field_destructure]
           [%%i decode]
           [%%i create]
+
+          (* [%%i upsert] *)
           [%%i read]
+          [%%i delete]
 
           let find_one ?(select = fields) ~where ?(decode = decode) db =
             Query.select select ~from:table

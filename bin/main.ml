@@ -9,7 +9,7 @@ let logged_in request (auth : Auth.valid_user) =
   let open Tyxml.Html in
   Reactagen.Header.html
     "𝕏 TheReactagen 𝕏"
-    [ div [ txt ("Logged in as " ^ auth.user.twitch_display_name) ]
+    [ Views.Navbar.home_nav auth.user
     ; div
         ~a:[ a_class [ "flex justify-center flex-col max-w-md mx-auto" ] ]
         [ suggestions ]

@@ -73,6 +73,7 @@ let get_required_env var =
 ;;
 
 let () =
+  (* Sleep for 1 second *)
   Dotenv.export () |> ignore;
   let twitch_client_id = get_required_env "TWITCH_CLIENT_ID" in
   let twitch_client_secret = get_required_env "TWITCH_CLIENT_SECRET" in
@@ -86,14 +87,15 @@ let () =
       }
   in
   let _ = Twitch.{ client; redirect } in
-  let _ =
-    match%lwt Based.initialize db_uri with
-    | Ok _ -> true |> Lwt.return
-    | Error err ->
-      Fmt.pr "Database Errored: %a @." Caqti_error.pp err;
-      true |> Lwt.return
+  let initialized =
+    Lwt_main.run
+    @@ match%lwt Based.initialize db_uri with
+       | Ok _ -> true |> Lwt.return
+       | Error err ->
+         Fmt.pr "Database Errored: %a @." Caqti_error.pp err;
+         true |> Lwt.return
   in
-  Fmt.pr "[reactagen] starting dream@.";
+  Fmt.pr "[reactagen] starting dream - %b@." initialized;
   (* TODO: Wen deploying, we need to turn on tls,
      get a cert file and a key file, point the server to that. *)
   Dream.run ~port:8080
@@ -106,7 +108,8 @@ let () =
        [ Dream.get "/" (fun request ->
            match%lwt index request client with
            | Ok page -> html_to_string page |> Dream.html
-           | Error _ -> Fmt.failwith "Failed to get index")
+           | Error err ->
+             Fmt.failwith "Failed to get index %a" Caqti_error.pp err)
        ; Dream.get "/twitch" (fun request ->
            (* http://localhost:8080/twitch?code=qdd5lawjewwc1peq2xoms3lxvae5xa&scope=user%3Aread%3Asubscriptions&state=testing1234 *)
            let%lwt _ = Auth.handle_redirect request client in

@@ -219,6 +219,13 @@ module ConfirmDeleteCard = struct
 
   let make ?(classes = []) ?on_confirm ?on_cancel () =
     let merged_classes = Class.merge [ [ "w-1/3"; "h-40" ]; classes ] in
+    let title =
+      Typography.make
+        ~elt:`H1
+        ~size:`Large
+        ~children:[ txt "Are you sure you want to delete this?" ]
+        ()
+    in
     let button_group =
       div
         ~a:[ a_class [ "flex"; "flex-row"; "gap-2" ] ]
@@ -226,25 +233,22 @@ module ConfirmDeleteCard = struct
         ; Button.make ?on_click:on_cancel ~children:[ txt "Cancel" ] ()
         ]
     in
-    let card_body =
-      div
-        ~a:[ a_class [ "flex"; "flex-col"; "gap-2"; "p-4" ] ]
+    Card.make
+      ~classes:merged_classes
+      ~children:
         [ div
-            ~a:
-              [ a_class
-                  [ "flex flex-row justify-between text-slate-900 bg-slate-100"
+            ~a:[ a_class [ "flex"; "flex-col"; "gap-2"; "p-4" ] ]
+            [ div
+                ~a:
+                  [ a_class
+                      [ "flex flex-row justify-between text-slate-900 \
+                         bg-slate-100"
+                      ]
                   ]
-              ]
-            [ Typography.make
-                ~elt:`H1
-                ~size:`Large
-                ~children:[ txt "Are you sure you want to delete?" ]
-                ()
-            ; button_group
+                [ title; button_group ]
             ]
         ]
-    in
-    Card.make ~classes:merged_classes ~children:[ card_body ] ()
+      ()
   ;;
 end
 

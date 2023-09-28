@@ -13,20 +13,18 @@ module Card = struct
     ; cls : string list
     }
 
-  let make props =
-    div
-      ~a:
-        [ a_class
-            [ "rounded-sm"
-            ; "border"
-            ; "border-solid"
-            ; "border-slate-200"
-            ; "bg-white"
-            ; "shadow-md"
-            ]
-        ]
-      props.children
+  let base_classes =
+    [ "rounded-sm"
+    ; "border"
+    ; "border-solid"
+    ; "border-slate-200"
+    ; "bg-white"
+    ; "shadow-md"
+    ]
   ;;
+
+  let classes_of_props props = props.cls @ base_classes
+  let make props = div ~a:[ a_class @@ classes_of_props props ] props.children
 end
 
 module Button = struct

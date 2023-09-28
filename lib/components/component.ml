@@ -235,7 +235,13 @@ module ConfirmDeleteCard = struct
                   [ "flex flex-row justify-between text-slate-900 bg-slate-100"
                   ]
               ]
-            [ button_group ]
+            [ Typography.make
+                ~elt:`H1
+                ~size:`Large
+                ~children:[ txt "Are you sure you want to delete?" ]
+                ()
+            ; button_group
+            ]
         ]
     in
     Card.make ~classes:merged_classes ~children:[ card_body ] ()

@@ -1,27 +1,27 @@
 (*  TODO: hx-trigger response
-          You can send a response header with basically an event name
-          and then respond to that from within the rest of the body.
-          So, you could auto refresh / re-update some table with a new HTTP
-          request, but decoupled from the rest of the project. 
+    You can send a response header with basically an event name
+    and then respond to that from within the rest of the body.
+    So, you could auto refresh / re-update some table with a new HTTP
+    request, but decoupled from the rest of the project.
 
-          Smart thing to do would be to make some type/module that has events
-          and use that from within your own stuff to make sure you're only emiting
-          events that can be handled. Something to think about.
+    Smart thing to do would be to make some type/module that has events
+    and use that from within your own stuff to make sure you're only emiting
+    events that can be handled. Something to think about.
 
-          https://hypermedia.systems/book/deep-htmx/ -> Server Generated Events *)
+    https://hypermedia.systems/book/deep-htmx/ -> Server Generated Events *)
 
-(* 
+(*
    HX-Location
-    Causes a client-side redirection to a new location
+   Causes a client-side redirection to a new location
 
-  HX-Push-Url
-    Pushes a new URL into the location bar
+   HX-Push-Url
+   Pushes a new URL into the location bar
 
-  HX-Refresh
-    Refreshes the current page
+   HX-Refresh
+   Refreshes the current page
 
-  HX-Retarget
-    Allows you to specify a new target to swap the response content into on the client side *)
+   HX-Retarget
+   Allows you to specify a new target to swap the response content into on the client side *)
 
 (* <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML"}'> *)
 
@@ -30,7 +30,7 @@ open Base
 (** Typesafe htmlx wrappers for OCaml. Emits attributes to be used with TyXML *)
 
 (* TODO: Would be cool to break this down a bit more (class, id, etc.).
-         Down with strings! *)
+   Down with strings! *)
 
 type get = [ `Get of string ]
 type post = [ `Post of string ]
@@ -150,21 +150,21 @@ module SwapType = struct
 
   type attr =
     | InnerHTML
-        (** The default, replace the inner html of the target element *)
+    (** The default, replace the inner html of the target element *)
     | OuterHTML
-        (** Replace the entire target element with the response *)
+    (** Replace the entire target element with the response *)
     | BeforeBegin
-        (** Insert the response before the target element *)
+    (** Insert the response before the target element *)
     | AfterBegin
-        (** Insert the response before the first child of the target element *)
+    (** Insert the response before the first child of the target element *)
     | BeforeEnd
-        (** Insert the response after the last child of the target element *)
+    (** Insert the response after the last child of the target element *)
     | AfterEnd
-        (** Insert the response after the target element *)
+    (** Insert the response after the target element *)
     | Delete
-        (** Deletes the target element regardless of the response *)
+    (** Deletes the target element regardless of the response *)
     | None
-        (** Does not append content from response (out of band items will still be processed). *)
+    (** Does not append content from response (out of band items will still be processed). *)
 
   type t =
     { attr : attr
@@ -213,16 +213,19 @@ module TriggerType = struct
     | Consume
     | Queue of [ `First | `Last | `All | `None ]
     | Load
-        (** Trigged on load (useful for lazy-loading) *)
+    (** Trigged on load (useful for lazy-loading) *)
     | Revealed
-        (** Triggered when an element is scrolled into the viewport (useful for lazy-loading).
-            If you are using `overflow` you should `intersect once` instead of Revealed *)
+    (** Triggered when an element is scrolled into the viewport (useful for lazy-loading).
+        If you are using `overflow` you should `intersect once` instead of Revealed *)
     | Intersect of [ `Default | `Root of string | `Threshold of float ]
 
   type t = trigger list * modifier list
 
   let init ?(modifiers = []) triggers = triggers, modifiers
 end
+
+(* TODO: hx-trigger, for demoing api *)
+let trigger : TriggerType.t -> 'a Tyxml_html.attrib = fun _ -> failwith "TODO"
 
 (* TODO: hx-swap-oob? I don't think I understand. Need to look at some more examples. *)
 
@@ -239,7 +242,7 @@ let include_ link = Tyxml.Html.Unsafe.string_attrib "hx-include" link
 let indicator elt = Tyxml.Html.Unsafe.string_attrib "hx-indicator" elt
 
 (* TODO: hx-on. Would be very cool to use melange and encode the function name into some script:
-          https://htmx.org/attributes/hx-on/ *)
+   https://htmx.org/attributes/hx-on/ *)
 
 module Headers = struct
   (* don't expose *)

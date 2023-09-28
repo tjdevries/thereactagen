@@ -5,13 +5,29 @@ type hx_action =
   ; trigger : Hx.TriggerType.t
   }
 
+module Class = struct
+  module StringSet = Set.Make (String)
+
+  let merge (classes : string list list) =
+    classes
+    |> List.flatten
+    |> StringSet.of_list
+    |> StringSet.to_seq
+    |> List.of_seq
+  ;;
+end
+
+module Attributes = struct
+  let of_hx_action (action : hx_action) =
+    [ Hx.target action.target
+    ; Hx.swap action.swap.attr
+    ; Hx.trigger action.trigger
+    ]
+  ;;
+end
+
 module Card = struct
   open Tyxml.Html
-
-  type 'children t =
-    { children : 'children Tyxml.Html.elt list
-    ; cls : string list
-    }
 
   let base_classes =
     [ "rounded-sm"
@@ -23,20 +39,28 @@ module Card = struct
     ]
   ;;
 
-  let classes_of_props props = props.cls @ base_classes
-  let make props = div ~a:[ a_class @@ classes_of_props props ] props.children
+  let make ?(classes = []) ~children () =
+    let merged_classes = Class.merge [ base_classes; classes ] in
+    div ~a:[ a_class merged_classes ] children
+  ;;
 end
 
 module Button = struct
   open Tyxml.Html
 
-  type 'children t =
-    { children : 'children Tyxml.Html.elt list
-    ; classes : string list
-    ; on_click : hx_action
-    ; size : [ `Small | `Medium | `Large ]
-    ; variant : [ `Primary | `Secondary | `Destructive ]
-    }
+  type on_click = hx_action
+
+  type size =
+    [ `Small
+    | `Medium
+    | `Large
+    ]
+
+  type variant =
+    [ `Primary
+    | `Secondary
+    | `Destructive
+    ]
 
   let base_classes =
     [ "flex"
@@ -82,35 +106,56 @@ module Button = struct
     | `Large -> [ "px-4"; "py-3"; "text-lg" ]
   ;;
 
-  let classes_of_props props =
-    props.classes
-    @ base_classes
-    @ classes_of_variant props.variant
-    @ classes_of_size props.size
+  let classes_of_props ~variant ~size =
+    Class.merge
+      [ base_classes; classes_of_variant variant; classes_of_size size ]
   ;;
 
-  let make props =
-    button
-      ~a:
-        [ a_class @@ classes_of_props props
-        ; Hx.target props.on_click.target
-        ; Hx.swap props.on_click.swap.attr
-        ; Hx.trigger props.on_click.trigger
-        ]
-      props.children
+  let make
+    ?(classes = [])
+    ?(variant = `Primary)
+    ?(size = `Medium)
+    ?on_click
+    ~children
+    ()
+    =
+    let merged_classes =
+      Class.merge [ classes; classes_of_props ~variant ~size ]
+    in
+    let attrs =
+      on_click
+      |> Option.map Attributes.of_hx_action
+      |> Option.value ~default:[]
+      |> List.append [ a_class merged_classes ]
+    in
+    button ~a:attrs children
   ;;
 end
 
 module Typography = struct
   open Tyxml.Html
 
-  type 'children t =
-    { children : 'children Tyxml.Html.elt list
-    ; cls : string list
-    ; elt : [ `H1 | `H2 | `H3 | `H4 | `H5 | `H6 | `P ] option
-    ; size : [ `Small | `Medium | `Large ]
-    ; font_style : [ `Sans | `Serif | `Mono ]
-    }
+  type elt =
+    [ `H1
+    | `H2
+    | `H3
+    | `H4
+    | `H5
+    | `H6
+    | `P
+    ]
+
+  type size =
+    [ `Small
+    | `Medium
+    | `Large
+    ]
+
+  type font_style =
+    [ `Sans
+    | `Serif
+    | `Mono
+    ]
 
   let base_classes = [ "text-slate-900"; "leading-normal" ]
 
@@ -126,79 +171,82 @@ module Typography = struct
     | `Large -> [ "text-lg" ]
   ;;
 
-  let classes_of_props props =
-    props.cls
-    @ base_classes
-    @ classes_of_font_style props.font_style
-    @ classes_of_size props.size
+  let classes_of_props ~font_style ~size =
+    Class.merge
+      [ base_classes; classes_of_font_style font_style; classes_of_size size ]
   ;;
 
-  let elt_of_props props =
-    match props.elt with
-    | None | Some `P -> p
-    | Some `H1 -> h1
-    | Some `H2 -> h2
-    | Some `H3 -> h3
-    | Some `H4 -> h4
-    | Some `H5 -> h5
-    | Some `H6 -> h6
+  let elt_of_props elt =
+    match elt with
+    | `P -> p
+    | `H1 -> h1
+    | `H2 -> h2
+    | `H3 -> h3
+    | `H4 -> h4
+    | `H5 -> h5
+    | `H6 -> h6
   ;;
 
-  let make props =
-    let elt = elt_of_props props in
-    elt ~a:[ a_class @@ classes_of_props props ] props.children
+  let make
+    ?(classes = [])
+    ?(elt = `P)
+    ?(size = `Medium)
+    ?(font_style = `Sans)
+    ~children
+    ()
+    =
+    let merged_classes =
+      Class.merge [ classes; classes_of_props ~size ~font_style ]
+    in
+    let elt = elt_of_props elt in
+    elt ~a:[ a_class merged_classes ] children
   ;;
 end
+
+let _ =
+  Typography.make
+    ~elt:`H1
+    ~size:`Large
+    ~children:[ Tyxml.Html.txt "Hello, world!" ]
+    ()
+;;
 
 module ConfirmDeleteCard = struct
   open Tyxml.Html
 
-  type t =
-    { on_confirm : hx_action
-    ; on_cancel : hx_action
-    }
+  type on_confirm = hx_action
+  type on_cancel = hx_action
 
-  let make props =
-    let title =
-      Typography.make
-        { children = [ txt "Are you sure?" ]
-        ; cls = []
-        ; elt = Some `H1
-        ; size = `Medium
-        ; font_style = `Sans
-        }
-    in
-    let confirm_button =
-      Button.make
-        { children = [ txt "Confirm" ]
-        ; classes = []
-        ; on_click = props.on_confirm
-        ; size = `Medium
-        ; variant = `Destructive
-        }
-    in
-    let cancel_button =
-      Button.make
-        { children = [ txt "Cancel" ]
-        ; classes = []
-        ; on_click = props.on_cancel
-        ; size = `Medium
-        ; variant = `Secondary
-        }
-    in
+  let make ?(classes = []) ?on_confirm ?on_cancel () =
+    let merged_classes = Class.merge [ [ "w-1/3"; "h-40" ]; classes ] in
     let button_group =
       div
         ~a:[ a_class [ "flex"; "flex-row"; "gap-2" ] ]
-        [ confirm_button; cancel_button ]
+        [ Button.make ?on_click:on_confirm ~children:[ txt "Delete" ] ()
+        ; Button.make ?on_click:on_cancel ~children:[ txt "Cancel" ] ()
+        ]
     in
-    let body =
+    let card_body =
       div
         ~a:[ a_class [ "flex"; "flex-col"; "gap-2"; "p-4" ] ]
         [ div
-            ~a:[ a_class [ "text-slate-900 bg-slate-100" ] ]
-            [ title; button_group ]
+            ~a:
+              [ a_class
+                  [ "flex flex-row justify-between text-slate-900 bg-slate-100"
+                  ]
+              ]
+            [ button_group ]
         ]
     in
-    Card.make { children = [ body ]; cls = [] }
+    Card.make ~classes:merged_classes ~children:[ card_body ] ()
+  ;;
+end
+
+module Page = struct
+  type on_confirm = hx_action
+  type on_cancel = hx_action
+
+  let make ?(classes = []) ?on_confirm ?on_cancel () =
+    ConfirmDeleteCard.make ~classes ?on_confirm ?on_cancel ()
   ;;
 end

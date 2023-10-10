@@ -21,7 +21,7 @@ type t =
   { id : int [@primary { auto_increment = true }]
   ; user_id : string [@foreign User.table [ User.f_twitch_user_id ]]
   ; title : string
-  ; url : string (* TODO: Raw URL? *)
+  ; url : string [@unique]
   ; description : string
   ; category : Category.t
   ; status : Status.t [@default Status.Submitted]
@@ -226,10 +226,8 @@ let find_data t key =
   | None -> Lwt.return_error (`Missing_header key)
 ;;
 
-let post_router (request : Dream.request) =
+let post_router ~user_id (request : Dream.request) =
   let* form_data = get_form request in
-  (* let* user_id = Reactagen.Auth.get_user request in *)
-  let user_id = "1" in
   let* url = find_data form_data "url" in
   let* title = find_data form_data "title" in
   let* description = find_data form_data "description" in
@@ -263,7 +261,11 @@ let make_input ~name ~text ~input_type =
 let post_form request =
   let open Tyxml.Html in
   form
-    ~a:[ Hx.post base_url; Hx.swap BeforeEnd; Hx.target (Previous "tbody") ]
+    ~a:
+      [ Hx.post base_url
+      ; Hx.swap BeforeEnd
+      ; Hx.target (Previous "#suggestion-table")
+      ]
     [ Dream.csrf_tag request |> Unsafe.data
     ; div
         ~a:[ a_id "suggestion-form" ]

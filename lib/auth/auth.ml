@@ -127,14 +127,14 @@ let get_user_info client_id access_token validated_user =
   | Error err -> Fmt.failwith "Could not decode user_auth: %s %s" err body
 ;;
 
-let handle_redirect request client =
+let handle_redirect request client base_url =
   let code = Dream.query request "code" in
   let scope = Dream.query request "scope" in
   let state = Dream.query request "state" in
   match code, scope, state with
   | Some code, Some scope, Some state ->
     let* user_auth =
-      send_post ~client ~code ~redirect_uri:"http://localhost:8080/twitch"
+      send_post ~client ~code ~redirect_uri:String.(base_url ^ "twitch")
     in
     let* validated = validate_request user_auth.access_token in
     let* user_model =

@@ -1,4 +1,5 @@
 .env
+fly.env
 
 *.annot
 *.cmo

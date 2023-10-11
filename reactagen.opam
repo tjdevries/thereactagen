@@ -25,6 +25,7 @@ depends: [
   "ppx_enumerate"
   "ppxlib"
   "ppx_deriving"
+  "ppx_deriving_yojson"
   "lwt"
   "caqti"
   "caqti-lwt"

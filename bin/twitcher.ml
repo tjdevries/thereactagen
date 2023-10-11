@@ -22,7 +22,7 @@ type unit_users =
   }
 [@@deriving show, yojson { strict = false }]
 
-type broadcaster_subscription_response = { data : subscription list }
+type broadcaster_subscription_response = { data : Subscriber.t list }
 [@@deriving show, yojson { strict = false }]
 
 module type TWITCH_REQUEST = sig
@@ -61,7 +61,7 @@ module SubscriptionsUser = struct
     }
   [@@deriving show, yojson { strict = false }]
 
-  type response = { data : Twitch.subscription list }
+  type response = { data : Twitch.Subscriber.t list }
   [@@deriving show, yojson { strict = false }]
 
   let query request =
@@ -78,7 +78,7 @@ module SubscriptionsBroadcaster = struct
   type request = { broadcaster_id : string }
   [@@deriving show, yojson { strict = false }]
 
-  type response = { data : subscription list }
+  type response = { data : Subscriber.t list }
   [@@deriving show, yojson { strict = false }]
 
   let query request =
@@ -159,7 +159,7 @@ let broadcaster_subscriptions client (user : user) auth =
       auth
       { broadcaster_id = user.user_id }
   in
-  Fmt.pr "first sub: %a@." pp_subscription (List.hd subs.data);
+  Fmt.pr "first sub: %a@." Subscriber.pp (List.hd subs.data);
   subs.data |> Lwt.return
 ;;
 
@@ -183,8 +183,8 @@ let main () =
     auth_user
       client
       { user_id = first_sub.user_id
-      ; login = first_sub.user_login
-      ; display_name = first_sub.user_name
+      ; user_login = first_sub.user_login
+      ; user_display_name = first_sub.user_name
       }
   in
   let* user_response =
@@ -196,7 +196,7 @@ let main () =
   begin
     match user_response.data with
     | [] -> Fmt.pr "@.No subscribers?@."
-    | [ x ] -> Fmt.pr "Subscription Response: @.%a@." pp_subscription x
+    | [ x ] -> Fmt.pr "Subscription Response: @.%a@." Subscriber.pp x
     | _ -> assert false
   end;
   let* is_subbed =

@@ -1,6 +1,3 @@
 (library
-  (name views)
-  (libraries reactagen base fmt dream tyxml hx models))
-
-
-
+ (name views)
+ (libraries reactagen auth base fmt dream tyxml hx models))

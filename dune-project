@@ -26,7 +26,7 @@
    bos
    dotenv
    petrol
-   base fmt ppx_let ppx_enumerate ppxlib ppx_deriving
+   base fmt ppx_let ppx_enumerate ppxlib ppx_deriving ppx_deriving_yojson
    lwt caqti caqti-lwt caqti-dynload caqti-driver-sqlite3
    cohttp-lwt-unix)
 

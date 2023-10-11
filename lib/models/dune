@@ -1,11 +1,15 @@
 (include_subdirs qualified)
 
 (library
-  (name models)
-  (libraries reactagen base fmt petrol caqti-lwt dream tyxml hx)
-  (flags :standard -linkall)
-  (preprocess
-    (pps ppx_let lwt_ppx ppx_combust
-         ppx_enumerate
-         ppx_deriving.enum ppx_deriving.show ppx_deriving_yojson)))
-
+ (name models)
+ (libraries reactagen base fmt petrol caqti-lwt dream tyxml hx)
+ (flags :standard -linkall)
+ (preprocess
+  (pps
+   ppx_let
+   lwt_ppx
+   ppx_combust
+   ppx_enumerate
+   ppx_deriving.enum
+   ppx_deriving.show
+   ppx_deriving_yojson)))

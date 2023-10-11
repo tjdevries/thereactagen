@@ -17,6 +17,20 @@ let twitch_client_id = get_required_env "TWITCH_CLIENT_ID"
 let twitch_client_secret = get_required_env "TWITCH_CLIENT_SECRET"
 let reactagen_base_url = get_required_env "TWITCH_OAUTH_REDIRECT"
 let dream_secret = get_required_env "DREAM_SECRET_KEY"
+let () = Fmt.pr "OAuth Redirect Base URL: '%s' @." reactagen_base_url
+
+(** Config for managing connections to twitch. *)
+let twitch_config =
+  Twitch.
+    { client =
+        { client_id = twitch_client_id
+        ; secret = twitch_client_secret
+        ; name = "TheReactagen"
+        }
+    ; redirect = reactagen_base_url
+    }
+;;
+
 let () = Fmt.pr "Successfully found all environment@."
 
 let logged_in request (auth : Auth.valid_user) =
@@ -36,10 +50,10 @@ let logged_in request (auth : Auth.valid_user) =
   |> Lwt.return_ok
 ;;
 
-let index request client =
+let index request twitch_config =
   match Auth.get_cookie request with
   | Some auth -> logged_in request auth
-  | None -> Views.Login.login request client reactagen_base_url
+  | None -> Views.Login.login request twitch_config
 ;;
 
 let html_to_string html = Fmt.str "%a" (Tyxml.Html.pp ()) html
@@ -59,14 +73,6 @@ let post_vote ~vote request =
 ;;
 
 let () =
-  (* Sleep for 1 second *)
-  let client =
-    Twitch.
-      { client_id = twitch_client_id
-      ; secret = twitch_client_secret
-      ; name = "TheReactagen"
-      }
-  in
   let initialized =
     Lwt_main.run
     @@ match%lwt Based.initialize db_uri with
@@ -86,12 +92,12 @@ let () =
   @@ Dream.sql_pool db_uri
   @@ Dream.router
        [ Dream.get "/" (fun request ->
-           match%lwt index request client with
+           match%lwt index request twitch_config with
            | Ok page -> html_to_string page |> Dream.html
            | Error err ->
              Fmt.failwith "Failed to get index %a" Caqti_error.pp err)
        ; Dream.get "/twitch" (fun request ->
-           let%lwt _ = Auth.handle_redirect request client reactagen_base_url in
+           let%lwt _ = Auth.handle_redirect request twitch_config in
            Dream.redirect request "/")
        ; Dream.get "/unauth" (fun request ->
            let html =

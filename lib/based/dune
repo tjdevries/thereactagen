@@ -1,3 +1,5 @@
 (library
-  (name based)
-  (libraries base fmt models))
+ (name based)
+ (libraries base fmt models)
+ (preprocess
+  (pps ppx_let lwt_ppx)))

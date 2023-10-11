@@ -1,4 +1,4 @@
-(* open Base *)
+open Base
 (* open Lwt_result.Syntax *)
 
 let schema = Schema.schema
@@ -31,3 +31,33 @@ let get_vote_total ~suggestion_id db =
     | Some (count, _) -> count
     | _ -> 0)
 ;;
+
+module Route = struct
+  let base_url = "/suggestion/vote"
+  let upvote ~suggestion_id = Fmt.str "%s/up/%d" base_url suggestion_id
+  let downvote ~suggestion_id = Fmt.str "%s/down/%d" base_url suggestion_id
+
+  let post_vote ~vote ctx request =
+    let vote =
+      match vote with
+      | `Upvote -> 1
+      | `Downvote -> -1
+    in
+    let suggestion_id = Dream.param request "id" |> Int.of_string in
+    let user_id = ctx request in
+    let%lwt _ = Dream.sql request @@ create ~suggestion_id ~user_id ~vote in
+    match%lwt Dream.sql request @@ get_vote_total ~suggestion_id with
+    | Ok count -> Dream.response (Fmt.str "%d" count) |> Lwt.return
+    | _ -> assert false
+  ;;
+
+  (* TODO: I really don't like ctx... need some middleware step to load these up w/out cycles *)
+  let scope middleware ctx =
+    Dream.scope
+      base_url
+      middleware
+      [ Dream.post "/up/:id" (post_vote ~vote:`Upvote ctx)
+      ; Dream.post "/down/:id" (post_vote ~vote:`Downvote ctx)
+      ]
+  ;;
+end

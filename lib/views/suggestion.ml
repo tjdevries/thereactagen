@@ -1,4 +1,5 @@
 open Lwt_result.Syntax
+module VoteRoute = Models.Vote.Route
 
 let view ~suggestion_id request =
   let upvote_id = "suggestion-upvote" in
@@ -10,7 +11,7 @@ let view ~suggestion_id request =
     let mk_button route name btn =
       button
         ~a:
-          [ Hx.post (route ^ Int.to_string suggestion_id)
+          [ Hx.post (route ~suggestion_id)
           ; Hx.target (Css ("#" ^ upvote_id))
           ; a_class [ "btn"; btn; "mx-3" ]
           ]
@@ -46,8 +47,8 @@ let view ~suggestion_id request =
                   rows
               ; div
                   ~a:[ a_class [ "grid grid-cols-1fr gap-4 m-3" ] ]
-                  [ mk_button "/suggestion/upvote/" "Upvote" "btn-success"
-                  ; mk_button "/suggestion/downvote/" "Downvote" "btn-error"
+                  [ mk_button VoteRoute.upvote "Upvote" "btn-success"
+                  ; mk_button VoteRoute.downvote "Downvote" "btn-error"
                   ]
               ]
           ]

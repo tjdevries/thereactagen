@@ -16,50 +16,14 @@ type valid_user =
 [@@deriving show, yojson { strict = false }]
 
 (*
-   Step 1:
-
-   Check the session, do i have `twitch_auth` and `twitch_refresh`?
-   If act like logged in until taking an action (so view-only basically?)
-
-   https://id.twitch.tv/oauth2/authorize
-   ?response_type=code
-   &client_id=hof5gwx0su6owfnys0nyan9c87zr6t
-   &redirect_uri=http://localhost:3000
-   &scope=channel%3Amanage%3Apolls+channel%3Aread%3Apolls
-   &state=c3ab8aa609ea11e793ae92361f002671
-*)
-
-let get_authorize_uri ~client_id ~redirect_uri ~scope ~state =
-  let uri = Uri.of_string "https://id.twitch.tv/oauth2/authorize" in
-  Uri.with_query'
-    uri
-    [ "response_type", "code"
-    ; "client_id", client_id
-    ; "redirect_uri", redirect_uri
-    ; "scope", scope
-    ; "state", state
-    ]
-;;
-
-(*
    http://localhost:3000/
    ?code=gulfwdmys5lsm6qyz4xiz9q32l10
    &scope=channel%3Amanage%3Apolls+channel%3Aread%3Apolls
    &state=c3ab8aa609ea11e793ae92361f002671
 *)
 
-let send_post ~(client : Twitch.client) ~code ~redirect_uri =
-  let uri = Uri.of_string "https://id.twitch.tv/oauth2/token" in
-  let uri =
-    Uri.with_query'
-      uri
-      [ "client_id", client.client_id
-      ; "client_secret", client.secret
-      ; "code", code
-      ; "grant_type", "authorization_code"
-      ; "redirect_uri", redirect_uri
-      ]
-  in
+let send_post ~code config =
+  let uri = Twitch.Oauth.make_post ~code config in
   let* resp, body = Client.post uri in
   let* body = Cohttp_lwt.Body.to_string body in
   let parsed = Yojson.Safe.from_string body |> Twitch.user_auth_of_yojson in
@@ -74,7 +38,6 @@ let set_cookie request auth =
   () |> Lwt.return
 ;;
 
-(*  TODO: This isn't good :) *)
 let get_cookie request =
   Dream.session_field request valid_user_key
   |> Option.find_map ~f:(fun str ->
@@ -127,22 +90,20 @@ let get_user_info client_id access_token validated_user =
   | Error err -> Fmt.failwith "Could not decode user_auth: %s %s" err body
 ;;
 
-let handle_redirect request client =
+let handle_redirect request (twitch_config : Twitch.twitch_config) =
   let code = Dream.query request "code" in
   let scope = Dream.query request "scope" in
   let state = Dream.query request "state" in
   match code, scope, state with
-  | Some code, Some scope, Some state ->
-    let* user_auth =
-      send_post ~client ~code ~redirect_uri:"http://localhost:8080/twitch"
-    in
+  | Some code, Some scope, _ ->
+    let* user_auth = send_post ~code twitch_config in
     let* validated = validate_request user_auth.access_token in
     let* user_model =
       Dream.sql request @@ Models.User.read validated.validated_user
     in
     let* user_info =
       get_user_info
-        client.client_id
+        twitch_config.client.client_id
         user_auth.access_token
         validated.validated_user
     in

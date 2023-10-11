@@ -25,6 +25,8 @@ type t =
   }
 [@@deriving show, yojson, combust ~name:"users"]
 
+let test_field = Petrol.Schema.field "test" ~ty:Type.text
+
 let upsert twitch_user_id ?twitch_display_name ?twitch_profile_url db =
   let _ = twitch_profile_url in
   Query.upsert
@@ -41,6 +43,11 @@ let upsert twitch_user_id ?twitch_display_name ?twitch_profile_url db =
          (`DO_UPDATE
            ( "twitch_user_id"
            , "SET twitch_display_name = excluded.twitch_display_name" )))
+  (* ~on_conflict: *)
+  (*   (Some *)
+  (*      (`DO_UPDATE_BETTER *)
+  (*        ( f_twitch_user_id *)
+  (*        , Expr.[ f_twitch_display_name := excluded.f_twitch_display_name ] ))) *)
   |> Query.returning Expr.[ f_twitch_user_id ]
   |> Request.make_one
   |> Petrol.find db

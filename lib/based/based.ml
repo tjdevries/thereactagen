@@ -62,3 +62,12 @@ let initialize uri =
   print_endline ("[reactagen] initialize done: " ^ Int.to_string counted);
   Lwt.return_ok true
 ;;
+
+let ensure_database db_uri =
+  Lwt_main.run
+  @@ match%lwt initialize db_uri with
+     | Ok _ -> true |> Lwt.return
+     | Error err ->
+       Fmt.pr "Database Errored: %a @." Caqti_error.pp err;
+       false |> Lwt.return
+;;

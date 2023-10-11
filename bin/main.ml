@@ -1,5 +1,4 @@
 open Base
-open Lwt_result.Syntax
 
 let () = Fmt.pr "Loading...@."
 
@@ -33,27 +32,10 @@ let twitch_config =
 
 let () = Fmt.pr "Successfully found all environment@."
 
-let logged_in request (auth : Auth.valid_user) =
-  let suggestion_form = Models.Suggestion.filter_form request in
-  let* suggestions = Models.Suggestion.show_all request in
-  let open Tyxml.Html in
-  Reactagen.Header.html
-    "𝕏 TheReactagen 𝕏"
-    [ Views.Navbar.home_nav auth.user
-    ; div
-        ~a:[ a_class [ "flex justify-center flex-col max-w-md mx-auto" ] ]
-        [ suggestions ]
-    ; div
-        ~a:[ a_class [ "flex justify-center max-w-md mx-auto gap-4" ] ]
-        [ suggestion_form; Models.Suggestion.post_form request ]
-    ]
-  |> Lwt.return_ok
-;;
-
 let index request twitch_config =
   match Auth.get_cookie request with
-  | Some auth -> logged_in request auth
-  | None -> Views.Login.login request twitch_config
+  | Some auth -> Views.Index.make request auth
+  | None -> Views.Login.make request twitch_config
 ;;
 
 let html_to_string html = Fmt.str "%a" (Tyxml.Html.pp ()) html

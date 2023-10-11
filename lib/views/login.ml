@@ -1,6 +1,6 @@
 let default_header = Reactagen.Header.default_header
 
-let login _ client_config =
+let make _ client_config =
   let open Tyxml.Html in
   Reactagen.Header.html
     "TheReactagen: Login"

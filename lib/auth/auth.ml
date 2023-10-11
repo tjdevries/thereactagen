@@ -38,7 +38,6 @@ let set_cookie request auth =
   () |> Lwt.return
 ;;
 
-(*  TODO: This isn't good :) *)
 let get_cookie request =
   Dream.session_field request valid_user_key
   |> Option.find_map ~f:(fun str ->

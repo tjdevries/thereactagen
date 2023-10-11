@@ -1,4 +1,5 @@
 open Base
+module Ty = Reactagen.Ty
 
 let () = Fmt.pr "Loading...@."
 
@@ -38,9 +39,6 @@ let index request twitch_config =
   | None -> Views.Login.make request twitch_config
 ;;
 
-let html_to_string html = Fmt.str "%a" (Tyxml.Html.pp ()) html
-let elt_to_string elt = Fmt.str "%a" (Tyxml.Html.pp_elt ()) elt
-
 let post_vote ~vote request =
   let suggestion_id = Dream.param request "id" |> Int.of_string in
   let user = Auth.get_cookie request in
@@ -54,18 +52,18 @@ let post_vote ~vote request =
   | _ -> assert false
 ;;
 
+let ensure_database () =
+  Lwt_main.run
+  @@ match%lwt Based.initialize db_uri with
+     | Ok _ -> true |> Lwt.return
+     | Error err ->
+       Fmt.pr "Database Errored: %a @." Caqti_error.pp err;
+       false |> Lwt.return
+;;
+
 let () =
-  let initialized =
-    Lwt_main.run
-    @@ match%lwt Based.initialize db_uri with
-       | Ok _ -> true |> Lwt.return
-       | Error err ->
-         Fmt.pr "Database Errored: %a @." Caqti_error.pp err;
-         true |> Lwt.return
-  in
+  let initialized = ensure_database () in
   Fmt.pr "[reactagen] starting dream - %b@." initialized;
-  (* TODO: Wen deploying, we need to turn on tls,
-     get a cert file and a key file, point the server to that. *)
   Dream.run ~interface:"0.0.0.0" ~port:8080
   @@ Dream.logger
   @@ Dream.set_secret dream_secret
@@ -75,7 +73,7 @@ let () =
   @@ Dream.router
        [ Dream.get "/" (fun request ->
            match%lwt index request twitch_config with
-           | Ok page -> html_to_string page |> Dream.html
+           | Ok page -> Ty.html_to_string page |> Dream.html
            | Error err ->
              Fmt.failwith "Failed to get index %a" Caqti_error.pp err)
        ; Dream.get "/twitch" (fun request ->
@@ -86,7 +84,7 @@ let () =
              Reactagen.Header.html
                "𝕏 TheReactagen 𝕏"
                [ Tyxml_html.txt "You've logged out!" ]
-             |> html_to_string
+             |> Ty.html_to_string
            in
            let%lwt response = Dream.html html in
            Auth.drop_cookie response request)
@@ -99,7 +97,8 @@ let () =
            with
            | Ok id ->
              (match%lwt Models.Suggestion.show_one request id with
-              | Ok text -> text |> elt_to_string |> Dream.response |> Lwt.return
+              | Ok text ->
+                text |> Ty.elt_to_string |> Dream.response |> Lwt.return
               | _ -> assert false)
            | _ -> assert false)
        ; Dream.get "/suggestion/user/name/:name" (fun request ->
@@ -111,22 +110,22 @@ let () =
            | Ok suggestions ->
              let x = Models.Suggestion.display_suggestions suggestions in
              let x = Reactagen.Header.html "User Stuff" [ x ] in
-             x |> html_to_string |> Dream.response |> Lwt.return
+             x |> Ty.html_to_string |> Dream.response |> Lwt.return
            | Error _ -> assert false)
        ; Dream.post "/suggestion/table/view" (fun request ->
            match%lwt Models.Suggestion.show_all request with
-           | Ok res -> res |> elt_to_string |> Dream.response |> Lwt.return
+           | Ok res -> res |> Ty.elt_to_string |> Dream.response |> Lwt.return
            | _ -> assert false)
        ; Dream.get "/suggestion/:id" (fun request ->
            let id = Dream.param request "id" in
            let id = Int.of_string id in
            match%lwt Models.Suggestion.show_one request id with
-           | Ok text -> text |> elt_to_string |> Dream.response |> Lwt.return
+           | Ok text -> text |> Ty.elt_to_string |> Dream.response |> Lwt.return
            | _ -> assert false)
        ; Dream.get "/suggestion/view/:id" (fun request ->
            let id = Dream.param request "id" |> Int.of_string in
            match%lwt Views.Suggestion.view ~suggestion_id:id request with
-           | Ok response -> html_to_string response |> Dream.html
+           | Ok response -> Ty.html_to_string response |> Dream.html
            | Error err -> Fmt.failwith "%a" Caqti_error.pp err)
        ; Dream.post "/suggestion/upvote/:id" (post_vote ~vote:1)
        ; Dream.post "/suggestion/downvote/:id" (post_vote ~vote:(-1))

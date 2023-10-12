@@ -1,6 +1,7 @@
 module Typography = struct
   open Tyxml.Html
-  open Css
+
+  type children = Html_types.h6_content_fun Tyxml_html.elt list_wrap
 
   type elt =
     [ `H1
@@ -18,32 +19,60 @@ module Typography = struct
     | `Large
     ]
 
-  (* TODO: figure out actual styles *)
   type font_style =
     [ `Sans
     | `Serif
     | `Mono
     ]
 
-  (* TODO: figure out actual base classes *)
-  let base_classes = [ "text-slate-900"; "leading-normal" ]
+  type font_weight =
+    [ `Thin
+    | `ExtraLight
+    | `Light
+    | `Normal
+    | `Medium
+    | `SemiBold
+    | `Bold
+    | `ExtraBold
+    | `Black
+    ]
 
-  (* TODO: figoure out actual fonts *)
+  let base_classes = [ "text-slate-600"; "dark:text-slate-400" ]
+
   let classes_of_font_style = function
     | `Sans -> [ "font-sans" ]
     | `Serif -> [ "font-serif" ]
     | `Mono -> [ "font-mono" ]
+    | #font_style -> .
+  ;;
+
+  let classes_of_font_weight = function
+    | `Thin -> [ "font-thin" ]
+    | `ExtraLight -> [ "font-extralight" ]
+    | `Light -> [ "font-light" ]
+    | `Normal -> [ "font-normal" ]
+    | `Medium -> [ "font-medium" ]
+    | `SemiBold -> [ "font-semibold" ]
+    | `Bold -> [ "font-bold" ]
+    | `ExtraBold -> [ "font-extrabold" ]
+    | `Black -> [ "font-black" ]
+    | #font_weight -> .
   ;;
 
   let classes_of_size = function
     | `Small -> [ "text-sm" ]
     | `Medium -> [ "text-base" ]
     | `Large -> [ "text-lg" ]
+    | #size -> .
   ;;
 
-  let classes_of_props ~font_style ~size =
-    Classes.merge
-      [ base_classes; classes_of_font_style font_style; classes_of_size size ]
+  let classes_of_props ~font_style ~font_weight ~size =
+    List.flatten
+      [ base_classes
+      ; classes_of_font_style font_style
+      ; classes_of_size size
+      ; classes_of_font_weight font_weight
+      ]
   ;;
 
   let elt_of_props elt =
@@ -59,16 +88,15 @@ module Typography = struct
 
   let make
     ?(classes = [])
-    ?(elt = `P)
+    ?(as_elt = `P)
     ?(size = `Medium)
     ?(font_style = `Sans)
+    ?(font_weight = `Normal)
     ~children
     ()
     =
-    let merged_classes =
-      Classes.merge [ classes; classes_of_props ~size ~font_style ]
-    in
-    let elt = elt_of_props elt in
-    elt ~a:[ a_class merged_classes ] children
+    let classes' = classes @ classes_of_props ~size ~font_style ~font_weight in
+    let elt = elt_of_props as_elt in
+    elt ~a:[ a_class classes' ] children
   ;;
 end

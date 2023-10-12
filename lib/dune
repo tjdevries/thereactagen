@@ -1,7 +1,5 @@
 (library
  (name reactagen)
- (libraries
-   tyxml dream base twitch 
-   lwt cohttp-lwt-unix)
- (preprocess (pps ppx_let lwt_ppx ppx_deriving_yojson ppx_deriving.show)))
-
+ (libraries tyxml dream base twitch lwt cohttp-lwt-unix)
+ (preprocess
+  (pps ppx_let lwt_ppx ppx_deriving_yojson ppx_deriving.show)))

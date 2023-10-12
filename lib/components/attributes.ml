@@ -16,7 +16,7 @@ module Htmx = struct
     | `Route of route
     ]
 
-  let hx_delete uri = uri |> Uri.to_string |> Unsafe.string_attrib "hx-delete"
+  let hx_delete uri = Uri.to_string uri |> Unsafe.string_attrib "hx-delete"
   let hx_get uri = uri |> Uri.to_string |> Unsafe.string_attrib "hx-get"
   let hx_patch uri = uri |> Uri.to_string |> Unsafe.string_attrib "hx-patch"
   let hx_post uri = uri |> Uri.to_string |> Unsafe.string_attrib "hx-post"

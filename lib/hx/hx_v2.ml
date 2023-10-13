@@ -1,5 +1,3 @@
-[@@@ocaml.warning "-32"]
-
 open Base
 open Tyxml_html
 

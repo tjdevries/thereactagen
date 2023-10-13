@@ -228,7 +228,10 @@ module Trigger : sig
     ; modifier : Modifier.t option
     }
 
-  type t = { trigger : [ `Event of event_trigger | `Poll of Poll.t ] }
+  type t =
+    [ `Event of event_trigger
+    | `Poll of Poll.t
+    ]
 
   val to_string : t -> string
 end

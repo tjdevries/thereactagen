@@ -373,9 +373,12 @@ module Trigger = struct
     ; modifier : Modifier.t option
     }
 
-  type t = { trigger : [ `Event of event_trigger | `Poll of Poll.t ] }
+  type t =
+    [ `Event of event_trigger
+    | `Poll of Poll.t
+    ]
 
-  let to_string { trigger } =
+  let to_string trigger =
     match trigger with
     | `Event { event; modifier } ->
       let modifier_str = modifier |> Option.map ~f:Modifier.to_string in

@@ -9,14 +9,11 @@ module Verb : sig
     | `Put of Uri.t
     ]
 
-  (** TODO: .ml only *)
   val to_attr : t -> 'a attrib
-
+  val to_string : t -> string
   val uri : t -> Uri.t
   val uri_to_string : t -> string
-  val verb : t -> [< `Delete | `Get | `Patch | `Post | `Put ]
   val verb_to_string : t -> string
-  val to_string : t -> string
 end
 
 module Css : sig
@@ -33,15 +30,12 @@ module Css : sig
       (** Applied to a target before any content is swapped, removed after it is swapped. The duration can be modified via hx-swap. *)
     ]
 
-  (** TODO: .ml only *)
-  val to_attr : t -> 'a attrib
-
   val to_string : t -> string
 
   module Selector : sig
     type t
 
-    val make : string -> t
+    val of_string : string -> t
     val to_string : t -> string
   end
 end
@@ -55,7 +49,7 @@ module Swap : sig
 
     val make_scroll_behaviour
       :  ?selector:Css.Selector.t
-      -> direction:[< `Top | `Bottom ]
+      -> [ `Top | `Bottom ]
       -> scroll_behaviour
 
     val scroll_behaviour_to_string : scroll_behaviour -> string
@@ -105,8 +99,6 @@ module Swap : sig
     { strategy : strategy
     ; modifier : Modifier.t option
     }
-
-  val to_attr : t -> 'a attrib
 end
 
 module Target : sig
@@ -126,15 +118,12 @@ module Target : sig
           with error class *)
     ]
 
-  (** TODO: .ml only *)
-  val to_attr : t -> 'a attrib
-
   val to_string : t -> string
 end
 
 module Trigger : sig
   module Event : sig
-    (* As you need/use more Html events, add them here. *)
+    (* As we need/use more Html events, add them here. *)
     type focus_event =
       [ `Focus
       | `Focus_in
@@ -226,10 +215,8 @@ module Trigger : sig
 
   module Poll : sig
     (* TODO: Should this be a more complex type? The docs are pretty vague *)
-    type condition = string
-
     type t =
-      { condition : condition option
+      { condition : string option
       ; interval : [ `Seconds of int | `Milliseconds of int ]
       }
 
@@ -243,23 +230,20 @@ module Trigger : sig
 
   type t = { trigger : [ `Event of event_trigger | `Poll of Poll.t ] }
 
-  (** TODO: .ml only *)
-  val to_attr : t -> 'a attrib
-
   val to_string : t -> string
 end
 
 module Attributes : sig
   (* Core attributes *)
   val boost : bool -> 'a attrib
-  val css : Css.t -> 'a attrib
-  val delete : [< Verb.t ] -> 'a attrib
-  val get : [< Verb.t ] -> 'a attrib
+  val css : [< Css.t ] -> [> `Class ] attrib
+  val delete : Uri.t -> 'a attrib
+  val get : Uri.t -> 'a attrib
   val on : string -> 'a attrib
-  val patch : [< Verb.t ] -> 'a attrib
-  val post : [< Verb.t ] -> 'a attrib
+  val patch : Uri.t -> 'a attrib
+  val post : Uri.t -> 'a attrib
   val push_url : [ `Bool of bool | `Uri of Uri.t ] -> 'a attrib
-  val put : [< Verb.t ] -> 'a attrib
+  val put : Uri.t -> 'a attrib
   val select : Css.Selector.t -> 'a attrib
   val select_oob : ?swap_strategy:Swap.strategy -> Css.Selector.t -> 'a attrib
   val swap : Swap.t -> 'a attrib

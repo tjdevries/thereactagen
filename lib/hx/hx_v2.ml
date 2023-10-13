@@ -9,18 +9,12 @@ module Verb = struct
     | Post of Uri.t
     | Put of Uri.t
 
-  let delete_attr uri = Uri.to_string uri |> Unsafe.string_attrib "hx-delete"
-  let get_attr uri = uri |> Uri.to_string |> Unsafe.string_attrib "hx-get"
-  let patch_attr uri = uri |> Uri.to_string |> Unsafe.string_attrib "hx-patch"
-  let post_attr uri = uri |> Uri.to_string |> Unsafe.string_attrib "hx-post"
-  let put_attr uri = uri |> Uri.to_string |> Unsafe.string_attrib "hx-put"
-
   let to_attr = function
-    | Delete uri -> delete_attr uri
-    | Get uri -> get_attr uri
-    | Patch uri -> patch_attr uri
-    | Post uri -> post_attr uri
-    | Put uri -> put_attr uri
+    | Delete uri -> uri |> Uri.to_string |> Unsafe.string_attrib "hx-delete"
+    | Get uri -> uri |> Uri.to_string |> Unsafe.string_attrib "hx-get"
+    | Patch uri -> uri |> Uri.to_string |> Unsafe.string_attrib "hx-patch"
+    | Post uri -> uri |> Uri.to_string |> Unsafe.string_attrib "hx-post"
+    | Put uri -> uri |> Uri.to_string |> Unsafe.string_attrib "hx-put"
   ;;
 
   let uri = function
@@ -372,18 +366,18 @@ module Attributes = struct
   ;;
 
   let css c = Css.to_attr c
-  let delete = Verb.delete_attr
-  let get = Verb.get_attr
+  let delete uri = Verb.to_attr (Delete uri)
+  let get uri = Verb.to_attr (Get uri)
   let on event = Unsafe.string_attrib "hx-on" event
-  let patch = Verb.patch_attr
-  let post = Verb.post_attr
+  let patch uri = Verb.to_attr (Patch uri)
+  let post uri = Verb.to_attr (Post uri)
 
   let push_url = function
     | `Bool b -> b |> Bool.to_string |> Unsafe.string_attrib "hx-push-url"
     | `Uri uri -> uri |> Uri.to_string |> Unsafe.string_attrib "hx-push-url"
   ;;
 
-  let put = Verb.put_attr
+  let put uri = Verb.to_attr (Put uri)
 
   let select selector =
     selector |> Css.Selector.to_string |> Unsafe.string_attrib "hx-select"

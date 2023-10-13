@@ -1,3 +1,0 @@
-(library
-  (name components)
-  (libraries  base fmt tyxml hx))

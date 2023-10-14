@@ -3,38 +3,34 @@ open Tyxml.Html
 type children = Html_types.phrasing Tyxml_html.elt list_wrap
 
 type elt =
-  [ `H1
-  | `H2
-  | `H3
-  | `H4
-  | `H5
-  | `H6
-  | `P
-  ]
+  | H1
+  | H2
+  | H3
+  | H4
+  | H5
+  | H6
+  | P
 
 type size =
-  [ `Small
-  | `Medium
-  | `Large
-  ]
+  | Small
+  | Medium
+  | Large
 
 type font_style =
-  [ `Sans
-  | `Serif
-  | `Mono
-  ]
+  | Sans
+  | Serif
+  | Mono
 
 type font_weight =
-  [ `Thin
-  | `ExtraLight
-  | `Light
-  | `Normal
-  | `Medium
-  | `SemiBold
-  | `Bold
-  | `ExtraBold
-  | `Black
-  ]
+  | Thin
+  | ExtraLight
+  | Light
+  | Normal
+  | Medium
+  | SemiBold
+  | Bold
+  | ExtraBold
+  | Black
 
 val make
   :  ?classes:string list
@@ -45,4 +41,4 @@ val make
   -> ?font_weight:font_weight
   -> children:children
   -> unit
-  -> elt Tyxml_html.elt
+  -> [ `H1 | `H2 | `H3 | `H4 | `H5 | `H6 | `P ] Tyxml_html.elt

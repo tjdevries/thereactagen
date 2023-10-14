@@ -271,3 +271,7 @@ module Headers = struct
   (** This value will be the name of the triggered element, if it exists *)
   let get_trigger_name req = Dream.headers req "HX-Trigger-Name" |> List.hd
 end
+
+module V2 = struct
+  include Hx_v2
+end

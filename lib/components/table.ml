@@ -97,28 +97,36 @@ let wrapper_classes =
 
 let table_classes = [ "border-collapse"; "w-full"; "h-full"; "text-sm" ]
 
-module Responsive = struct
-  let make children =
-    let wrapper = div ~a:[ a_class wrapper_classes ] in
-    wrapper
-      [ tablex ~a:[ a_class (table_classes @ [ "table-auto" ]) ] children ]
-  ;;
-end
+type variant =
+  | Fixed
+  | Responsive
+  | Unstyled
 
-module Fixed = struct
-  let make children =
-    let wrapper = div ~a:[ a_class wrapper_classes ] in
-    wrapper
-      [ tablex ~a:[ a_class (table_classes @ [ "table-fixed" ]) ] children ]
-  ;;
-end
+let classes_of_variant = function
+  | Unstyled -> []
+  | Fixed -> [ "table-fixed" ]
+  | Responsive -> [ "table-auto" ]
+;;
 
-module Element = struct
-  let make ?(classes = []) ?(attributes = []) children =
+let variant_is_unstyled = function
+  | Unstyled -> true
+  | _ -> false
+;;
+
+let table_wrapper = div ~a:[ a_class wrapper_classes ]
+
+let make ?(classes = []) ?(attributes = []) ?(variant = Responsive) children =
+  if variant_is_unstyled variant
+  then (
     let attrs = attributes @ [ a_class classes ] in
-    table ~a:attrs children
-  ;;
-end
+    tablex ~a:attrs children)
+  else
+    table_wrapper
+      [ tablex
+          ~a:[ a_class (table_classes @ classes_of_variant variant) ]
+          children
+      ]
+;;
 
 (* let make
    (type data)

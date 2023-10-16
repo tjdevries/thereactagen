@@ -125,7 +125,7 @@ let make ?(classes = []) ?(attributes = []) ?(variant = Responsive) children =
       [ tablex
           ~a:
             (attributes
-             @ [ a_class (classes @ base_classes @ classes_of_variant variant) ]
+             @ [ a_class (base_classes @ classes_of_variant variant @ classes) ]
             )
           children
       ]

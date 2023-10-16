@@ -38,7 +38,73 @@ module Data_cell = struct
   ;;
 end
 
-module Column_spec = struct
+let wrapper_classes =
+  [ "h-full"
+  ; "w-full"
+  ; "overflow-auto"
+  ; "rounded-xl"
+  ; "border"
+  ; "border-black/5"
+  ; "bg-slate-100"
+  ; "py-8"
+  ; "text-slate-500"
+  ; "shadow-sm"
+  ; "dark:border-white/5"
+  ; "dark:bg-slate-900/40"
+  ; "dark:text-slate-400"
+  ]
+;;
+
+let table_classes = [ "border-collapse"; "w-full"; "h-full"; "text-sm" ]
+
+module Responsive = struct
+  let make children =
+    let wrapper = div ~a:[ a_class wrapper_classes ] in
+    wrapper
+      [ tablex ~a:[ a_class (table_classes @ [ "table-auto" ]) ] children ]
+  ;;
+end
+
+module Fixed = struct
+  let make children =
+    let wrapper = div ~a:[ a_class wrapper_classes ] in
+    wrapper
+      [ tablex ~a:[ a_class (table_classes @ [ "table-fixed" ]) ] children ]
+  ;;
+end
+
+module Element = struct
+  let make ?(classes = []) ?(attributes = []) children =
+    let attrs = attributes @ [ a_class classes ] in
+    table ~a:attrs children
+  ;;
+end
+
+(* let make
+   (type data)
+   ~(columns : (data, 'a) Column_spec.t list)
+   ~(data : data list)
+   ()
+   =
+   let thead =
+   columns
+   |> List.map ~f:Column_spec.to_header_cell
+   |> Row.make
+   |> List.return
+   |> Head.make
+   in
+   let tbody =
+   data
+   |> List.map ~f:(fun datum ->
+   columns |> List.map ~f:(Column_spec.to_data_cell datum))
+   |> List.map ~f:Row.make
+   |> Body.make
+   |> List.return
+   in
+   tablex ~a:[ a_class [ table_classes ] ] ~thead tbody
+   ;; *)
+
+(* module Column_spec = struct
   type ('data, 'column) t =
     { header : string
     ; accessor : 'data -> 'column
@@ -61,63 +127,4 @@ module Column_spec = struct
     |> List.return
     |> Data_cell.make
   ;;
-end
-
-module Responsive_table = struct
-  let make
-    (type data)
-    ~(columns : (data, 'a) Column_spec.t list)
-    ~(data : data list)
-    ()
-    =
-    let thead =
-      columns
-      |> List.map ~f:Column_spec.to_header_cell
-      |> Row.make
-      |> List.return
-      |> Head.make
-    in
-    let tbody =
-      data
-      |> List.map ~f:(fun datum ->
-        columns |> List.map ~f:(Column_spec.to_data_cell datum))
-      |> List.map ~f:Row.make
-      |> Body.make
-      |> List.return
-    in
-    tablex ~thead tbody
-  ;;
-end
-
-module Fixed = struct
-  let make
-    (type data)
-    ~(columns : (data, 'a) Column_spec.t list)
-    ~(data : data list)
-    ()
-    =
-    let thead =
-      columns
-      |> List.map ~f:Column_spec.to_header_cell
-      |> Row.make
-      |> List.return
-      |> Head.make
-    in
-    let tbody =
-      data
-      |> List.map ~f:(fun datum ->
-        columns |> List.map ~f:(Column_spec.to_data_cell datum))
-      |> List.map ~f:Row.make
-      |> Body.make
-      |> List.return
-    in
-    tablex ~thead tbody
-  ;;
-end
-
-module Element = struct
-  let make ?(classes = []) ?(attributes = []) children =
-    let attrs = attributes @ [ a_class classes ] in
-    table ~a:attrs children
-  ;;
-end
+end *)

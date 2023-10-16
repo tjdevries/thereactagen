@@ -19,6 +19,18 @@
  (preprocess
   (pps ppx_let lwt_ppx)))
 
+(executable 
+  (package component_library_playground) 
+  (public_name component_library_playground)
+  (name component_library_playground)
+  (modules component_library_playground) 
+  (libraries 
+    components
+    dream
+    dream-livereload
+    tyxml
+    fmt))
+
 (executable
  (package twitch)
  (public_name twitcher)

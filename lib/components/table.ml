@@ -18,22 +18,62 @@ module Body = struct
 end
 
 module Row = struct
-  let make ?(classes = []) ?(attributes = []) children =
-    let attrs = attributes @ [ a_class classes ] in
+  let hover_classes = [ "dark:hover:bg-slate-700"; "hover:bg-slate-50" ]
+
+  type hover_style =
+    | Highlight
+    | None
+
+  let classes_of_hover_style = function
+    | Highlight -> hover_classes
+    | None -> []
+  ;;
+
+  let make
+    ?(classes = [])
+    ?(attributes = [])
+    ?(hover_style = Highlight)
+    children
+    =
+    let hover_classes' = classes_of_hover_style hover_style in
+    let attrs = attributes @ [ a_class (classes @ hover_classes') ] in
     tr ~a:attrs children
   ;;
 end
 
 module Header_cell = struct
+  let base_classes =
+    [ "border-b"
+    ; "p-4"
+    ; "pb-3"
+    ; "first:pl-8"
+    ; "last:pr-8"
+    ; "pt-0"
+    ; "text-left"
+    ; "font-medium"
+    ; "dark:border-slate-600"
+    ]
+  ;;
+
   let make ?(classes = []) ?(attributes = []) children =
-    let attrs = attributes @ [ a_class classes ] in
+    let attrs = attributes @ [ a_class (classes @ base_classes) ] in
     th ~a:attrs children
   ;;
 end
 
 module Data_cell = struct
+  let base_classes =
+    [ "border-b"
+    ; "border-slate-100"
+    ; "p-4"
+    ; "first:pl-8"
+    ; "last:pr-8"
+    ; "dark:border-slate-700"
+    ]
+  ;;
+
   let make ?(classes = []) ?(attributes = []) children =
-    let attrs = attributes @ [ a_class classes ] in
+    let attrs = attributes @ [ a_class (classes @ base_classes) ] in
     td ~a:attrs children
   ;;
 end

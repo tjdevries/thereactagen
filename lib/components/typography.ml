@@ -85,8 +85,7 @@ let make
   ?(size : size = Medium)
   ?(font_style = Sans)
   ?(font_weight = Normal)
-  ~children
-  ()
+  children
   =
   let classes' = classes @ classes_of_props ~size ~font_style ~font_weight in
   let attrs = attributes @ [ a_class classes' ] in

@@ -22,6 +22,5 @@ val make
   -> ?attributes:Html_types.button_attrib Tyxml_html.attrib list
   -> ?variant:variant
   -> ?size:size
-  -> children:children
-  -> unit
+  -> children
   -> Html_types.button elt

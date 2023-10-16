@@ -78,25 +78,6 @@ module Data_cell = struct
   ;;
 end
 
-let wrapper_classes =
-  [ "h-full"
-  ; "w-full"
-  ; "overflow-auto"
-  ; "rounded-xl"
-  ; "border"
-  ; "border-black/5"
-  ; "bg-slate-100"
-  ; "py-8"
-  ; "text-slate-500"
-  ; "shadow-sm"
-  ; "dark:border-white/5"
-  ; "dark:bg-slate-900/40"
-  ; "dark:text-slate-400"
-  ]
-;;
-
-let table_classes = [ "border-collapse"; "w-full"; "h-full"; "text-sm" ]
-
 type variant =
   | Fixed
   | Responsive
@@ -113,7 +94,28 @@ let variant_is_unstyled = function
   | _ -> false
 ;;
 
-let table_wrapper = div ~a:[ a_class wrapper_classes ]
+let base_classes = [ "border-collapse"; "w-full"; "h-full"; "text-sm" ]
+
+let table_wrapper =
+  div
+    ~a:
+      [ a_class
+          [ "h-full"
+          ; "w-full"
+          ; "overflow-auto"
+          ; "rounded-xl"
+          ; "border"
+          ; "border-black/5"
+          ; "bg-slate-100"
+          ; "py-8"
+          ; "text-slate-500"
+          ; "shadow-sm"
+          ; "dark:border-white/5"
+          ; "dark:bg-slate-900/40"
+          ; "dark:text-slate-400"
+          ]
+      ]
+;;
 
 let make ?(classes = []) ?(attributes = []) ?(variant = Responsive) children =
   if variant_is_unstyled variant
@@ -123,7 +125,7 @@ let make ?(classes = []) ?(attributes = []) ?(variant = Responsive) children =
   else
     table_wrapper
       [ tablex
-          ~a:[ a_class (table_classes @ classes_of_variant variant) ]
+          ~a:[ a_class (base_classes @ classes_of_variant variant) ]
           children
       ]
 ;;

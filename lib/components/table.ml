@@ -119,13 +119,14 @@ let table_wrapper =
 
 let make ?(classes = []) ?(attributes = []) ?(variant = Responsive) children =
   if variant_is_unstyled variant
-  then (
-    let attrs = attributes @ [ a_class classes ] in
-    tablex ~a:attrs children)
+  then tablex ~a:(attributes @ [ a_class classes ]) children
   else
     table_wrapper
       [ tablex
-          ~a:[ a_class (base_classes @ classes_of_variant variant) ]
+          ~a:
+            (attributes
+             @ [ a_class (classes @ base_classes @ classes_of_variant variant) ]
+            )
           children
       ]
 ;;

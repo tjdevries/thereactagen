@@ -1,9 +1,10 @@
-[@@@ocaml.warning "-26-27-34"]
-
 open Base
 open Tyxml.Html
 
 module Head = struct
+  type attributes = Html_types.thead_attrib Tyxml_html.attrib list
+  type children = Html_types.thead_content_fun elt list_wrap
+
   let make ?(classes = []) ?(attributes = []) children =
     let attrs = attributes @ [ a_class classes ] in
     thead ~a:attrs children
@@ -11,14 +12,22 @@ module Head = struct
 end
 
 module Body = struct
+  type attributes = Html_types.tbody_attrib Tyxml_html.attrib list
+  type children = Html_types.tbody_content_fun elt list_wrap
+
+  let base_classes = [ "bg-slate-50"; "dark:bg-slate-800" ]
+
   let make ?(classes = []) ?(attributes = []) children =
-    let attrs = attributes @ [ a_class classes ] in
+    let attrs = attributes @ [ a_class (base_classes @ classes) ] in
     tbody ~a:attrs children
   ;;
 end
 
 module Row = struct
-  let hover_classes = [ "dark:hover:bg-slate-700"; "hover:bg-slate-50" ]
+  type attributes = Html_types.tr_attrib Tyxml_html.attrib list
+  type children = Html_types.tr_content_fun elt list_wrap
+
+  let hover_classes = [ "dark:hover:bg-slate-700"; "hover:bg-slate-200/40" ]
 
   type hover_style =
     | Highlight
@@ -42,6 +51,9 @@ module Row = struct
 end
 
 module Header_cell = struct
+  type attributes = Html_types.thead_attrib Tyxml_html.attrib list
+  type children = Html_types.th_content_fun elt list_wrap
+
   let base_classes =
     [ "border-b"
     ; "p-4"
@@ -62,6 +74,9 @@ module Header_cell = struct
 end
 
 module Data_cell = struct
+  type attributes = Html_types.td_attrib Tyxml_html.attrib list
+  type children = Html_types.td_content_fun elt list_wrap
+
   let base_classes =
     [ "border-b"
     ; "border-slate-100"
@@ -77,6 +92,9 @@ module Data_cell = struct
     td ~a:attrs children
   ;;
 end
+
+type attributes = Html_types.tablex_attrib Tyxml_html.attrib list
+type children = Html_types.tablex_content_fun elt list_wrap
 
 type variant =
   | Fixed
@@ -96,86 +114,48 @@ let variant_is_unstyled = function
 
 let base_classes = [ "border-collapse"; "w-full"; "h-full"; "text-sm" ]
 
-let table_wrapper =
-  div
-    ~a:
-      [ a_class
-          [ "h-full"
-          ; "w-full"
-          ; "overflow-auto"
-          ; "rounded-xl"
-          ; "border"
-          ; "border-black/5"
-          ; "bg-slate-100"
-          ; "py-8"
-          ; "text-slate-500"
-          ; "shadow-sm"
-          ; "dark:border-white/5"
-          ; "dark:bg-slate-900/40"
-          ; "dark:text-slate-400"
-          ]
-      ]
-;;
+(** Constructs a table using the provided [children].
+    - [thead] and [tfoot] are optional table headers and footers, respectively.
+    - The table appearance is determined by the [variant]:
+      * [Unstyled]: The table is rendered without any specific styling.
+      * [Fixed] or [Responsive]: The table adapts to these styles, but [tfoot] is ignored in these cases.
 
-let make ?(classes = []) ?(attributes = []) ?(variant = Responsive) children =
+    Additional custom styling can be provided via [classes] and HTML attributes via [attributes]. *)
+let make
+  ?(classes = [])
+  ?(attributes = [])
+  ?(variant = Responsive)
+  ?thead
+  ?tfoot
+  children
+  =
   if variant_is_unstyled variant
-  then tablex ~a:(attributes @ [ a_class classes ]) children
+  then tablex ~a:(attributes @ [ a_class classes ]) ?thead ?tfoot children
   else
-    table_wrapper
+    div
+      ~a:
+        [ a_class
+            [ "h-full"
+            ; "w-full"
+            ; "overflow-auto"
+            ; "rounded-xl"
+            ; "border"
+            ; "border-black/5"
+            ; "bg-slate-100"
+            ; "py-8"
+            ; "text-slate-500"
+            ; "shadow-sm"
+            ; "dark:border-white/5"
+            ; "dark:bg-slate-900/40"
+            ; "dark:text-slate-400"
+            ]
+        ]
       [ tablex
           ~a:
             (attributes
              @ [ a_class (base_classes @ classes_of_variant variant @ classes) ]
             )
+          ?thead
           children
       ]
 ;;
-
-(* let make
-   (type data)
-   ~(columns : (data, 'a) Column_spec.t list)
-   ~(data : data list)
-   ()
-   =
-   let thead =
-   columns
-   |> List.map ~f:Column_spec.to_header_cell
-   |> Row.make
-   |> List.return
-   |> Head.make
-   in
-   let tbody =
-   data
-   |> List.map ~f:(fun datum ->
-   columns |> List.map ~f:(Column_spec.to_data_cell datum))
-   |> List.map ~f:Row.make
-   |> Body.make
-   |> List.return
-   in
-   tablex ~a:[ a_class [ table_classes ] ] ~thead tbody
-   ;; *)
-
-(* module Column_spec = struct
-  type ('data, 'column) t =
-    { header : string
-    ; accessor : 'data -> 'column
-    ; to_string : 'column -> string
-    }
-
-  let header { header; _ } = header
-  let accessor { accessor; _ } = accessor
-  let value { accessor; _ } data = accessor data
-
-  let to_header_cell column =
-    column.header |> txt |> List.return |> Header_cell.make
-  ;;
-
-  let to_data_cell datum column =
-    datum
-    |> column.accessor
-    |> column.to_string
-    |> txt
-    |> List.return
-    |> Data_cell.make
-  ;;
-end *)

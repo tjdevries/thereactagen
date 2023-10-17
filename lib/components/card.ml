@@ -15,8 +15,7 @@ let base_classes =
   ]
 ;;
 
-let make ?(classes = []) ?(attributes = []) children =
-  let classes' = base_classes @ classes in
-  let attrs = attributes @ [ a_class classes' ] in
-  div ~a:attrs children
+let make ?(a = []) children =
+  let attributes = Util.merge_attribute_list [ "class", base_classes ] a in
+  div ~a:attributes children
 ;;

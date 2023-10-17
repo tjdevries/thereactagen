@@ -15,7 +15,7 @@ module Body = struct
   let base_classes = [ "bg-slate-50"; "dark:bg-slate-800" ]
 
   let make ?(a = []) children =
-    let attributes = a @ [ a_class base_classes ] in
+    let attributes = Util.merge_attribute_list [ "class", base_classes ] a in
     tbody ~a:attributes children
   ;;
 end
@@ -36,7 +36,11 @@ module Row = struct
   ;;
 
   let make ?(a = []) ?(hover_style = Highlight) children =
-    let attributes = a @ [ hover_style |> classes_of_hover_style |> a_class ] in
+    let attributes =
+      Util.merge_attribute_list
+        [ "class", classes_of_hover_style hover_style ]
+        a
+    in
     tr ~a:attributes children
   ;;
 end
@@ -79,7 +83,7 @@ module Data_cell = struct
   ;;
 
   let make ?(a = []) children =
-    let attributes = a @ [ a_class base_classes ] in
+    let attributes = Util.merge_attribute_list [ "class", base_classes ] a in
     td ~a:attributes children
   ;;
 end
@@ -117,11 +121,9 @@ let make ?(a = []) ?(variant = Responsive) ?thead ?tfoot children =
   then tablex ~a ?thead ?tfoot children
   else (
     let merged_classes =
-      [ base_classes; classes_of_variant variant ]
-      |> List.concat
-      |> a_class
-      |> List.return
+      [ base_classes; classes_of_variant variant ] |> List.concat
     in
+    let attributes = Util.merge_attribute_list [ "class", merged_classes ] a in
     div
       ~a:
         [ a_class
@@ -140,5 +142,5 @@ let make ?(a = []) ?(variant = Responsive) ?thead ?tfoot children =
             ; "dark:text-slate-400"
             ]
         ]
-      [ tablex ~a:(a @ merged_classes) ?thead children ])
+      [ tablex ~a:attributes ?thead children ])
 ;;

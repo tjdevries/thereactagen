@@ -4,9 +4,7 @@ type attributes = Html_types.div_attrib Tyxml_html.attrib list
 type children = Html_types.div_content_fun elt list_wrap
 
 let base_classes =
-  [ "w-full"
-  ; "h-full"
-  ; "p-6"
+  [ "p-6"
   ; "rounded-xl"
   ; "bg-white"
   ; "dark:bg-slate-800"

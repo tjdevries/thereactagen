@@ -18,7 +18,10 @@ module Body = struct
   let base_classes = [ "bg-slate-50"; "dark:bg-slate-800" ]
 
   let make ?(classes = []) ?(attributes = []) children =
-    let attrs = attributes @ [ a_class (base_classes @ classes) ] in
+    let merged_classes =
+      List.concat [ base_classes; classes ] |> a_class |> List.return
+    in
+    let attrs = attributes @ merged_classes in
     tbody ~a:attrs children
   ;;
 end
@@ -45,7 +48,10 @@ module Row = struct
     children
     =
     let hover_classes' = classes_of_hover_style hover_style in
-    let attrs = attributes @ [ a_class (classes @ hover_classes') ] in
+    let merged_classes =
+      List.concat [ classes; hover_classes' ] |> a_class |> List.return
+    in
+    let attrs = attributes @ merged_classes in
     tr ~a:attrs children
   ;;
 end
@@ -68,7 +74,10 @@ module Header_cell = struct
   ;;
 
   let make ?(classes = []) ?(attributes = []) children =
-    let attrs = attributes @ [ a_class (classes @ base_classes) ] in
+    let merged_classes =
+      List.concat [ base_classes; classes ] |> a_class |> List.return
+    in
+    let attrs = attributes @ merged_classes in
     th ~a:attrs children
   ;;
 end
@@ -88,7 +97,10 @@ module Data_cell = struct
   ;;
 
   let make ?(classes = []) ?(attributes = []) children =
-    let attrs = attributes @ [ a_class (classes @ base_classes) ] in
+    let merged_classes =
+      List.concat [ base_classes; classes ] |> a_class |> List.return
+    in
+    let attrs = attributes @ merged_classes in
     td ~a:attrs children
   ;;
 end
@@ -131,7 +143,13 @@ let make
   =
   if variant_is_unstyled variant
   then tablex ~a:(attributes @ [ a_class classes ]) ?thead ?tfoot children
-  else
+  else (
+    let merged_classes =
+      [ base_classes; classes_of_variant variant; classes ]
+      |> List.concat
+      |> a_class
+      |> List.return
+    in
     div
       ~a:
         [ a_class
@@ -150,12 +168,5 @@ let make
             ; "dark:text-slate-400"
             ]
         ]
-      [ tablex
-          ~a:
-            (attributes
-             @ [ a_class (base_classes @ classes_of_variant variant @ classes) ]
-            )
-          ?thead
-          children
-      ]
+      [ tablex ~a:(attributes @ merged_classes) ?thead children ])
 ;;

@@ -1,6 +1,7 @@
 open Tyxml.Html
 
 type children = Html_types.phrasing Tyxml_html.elt list_wrap
+type attributes = Html_types.common Tyxml_html.attrib list
 
 type elt =
   | H1
@@ -33,8 +34,7 @@ type font_weight =
   | Black
 
 val make
-  :  ?classes:string list
-  -> ?attributes:Html_types.common Tyxml_html.attrib list
+  :  ?a:attributes
   -> ?as_elt:elt
   -> ?size:size
   -> ?font_style:font_style

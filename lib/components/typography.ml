@@ -88,7 +88,7 @@ let make
   children
   =
   let classes = classes_of_props ~size ~font_style ~font_weight in
-  let attributes = a @ [ a_class classes ] in
+  let attributes = Util.merge_attribute_list [ "class", classes ] a in
   let elt = elt_of_props as_elt in
   elt ~a:attributes children
 ;;

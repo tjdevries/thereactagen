@@ -5,10 +5,7 @@ module Head = struct
   type attributes = Html_types.thead_attrib Tyxml_html.attrib list
   type children = Html_types.thead_content_fun elt list_wrap
 
-  let make ?(classes = []) ?(attributes = []) children =
-    let attrs = attributes @ [ a_class classes ] in
-    thead ~a:attrs children
-  ;;
+  let make ?(a = []) children = thead ~a children
 end
 
 module Body = struct
@@ -17,12 +14,9 @@ module Body = struct
 
   let base_classes = [ "bg-slate-50"; "dark:bg-slate-800" ]
 
-  let make ?(classes = []) ?(attributes = []) children =
-    let merged_classes =
-      List.concat [ base_classes; classes ] |> a_class |> List.return
-    in
-    let attrs = attributes @ merged_classes in
-    tbody ~a:attrs children
+  let make ?(a = []) children =
+    let attributes = a @ [ a_class base_classes ] in
+    tbody ~a:attributes children
   ;;
 end
 
@@ -41,18 +35,9 @@ module Row = struct
     | None -> []
   ;;
 
-  let make
-    ?(classes = [])
-    ?(attributes = [])
-    ?(hover_style = Highlight)
-    children
-    =
-    let hover_classes' = classes_of_hover_style hover_style in
-    let merged_classes =
-      List.concat [ classes; hover_classes' ] |> a_class |> List.return
-    in
-    let attrs = attributes @ merged_classes in
-    tr ~a:attrs children
+  let make ?(a = []) ?(hover_style = Highlight) children =
+    let attributes = a @ [ hover_style |> classes_of_hover_style |> a_class ] in
+    tr ~a:attributes children
   ;;
 end
 
@@ -73,12 +58,9 @@ module Header_cell = struct
     ]
   ;;
 
-  let make ?(classes = []) ?(attributes = []) children =
-    let merged_classes =
-      List.concat [ base_classes; classes ] |> a_class |> List.return
-    in
-    let attrs = attributes @ merged_classes in
-    th ~a:attrs children
+  let make ?(a = []) children =
+    let attributes = a @ [ a_class base_classes ] in
+    th ~a:attributes children
   ;;
 end
 
@@ -96,12 +78,9 @@ module Data_cell = struct
     ]
   ;;
 
-  let make ?(classes = []) ?(attributes = []) children =
-    let merged_classes =
-      List.concat [ base_classes; classes ] |> a_class |> List.return
-    in
-    let attrs = attributes @ merged_classes in
-    td ~a:attrs children
+  let make ?(a = []) children =
+    let attributes = a @ [ a_class base_classes ] in
+    td ~a:attributes children
   ;;
 end
 
@@ -133,19 +112,12 @@ let base_classes = [ "border-collapse"; "w-full"; "h-full"; "text-sm" ]
       * [Fixed] or [Responsive]: The table adapts to these styles, but [tfoot] is ignored in these cases.
 
     Additional custom styling can be provided via [classes] and HTML attributes via [attributes]. *)
-let make
-  ?(classes = [])
-  ?(attributes = [])
-  ?(variant = Responsive)
-  ?thead
-  ?tfoot
-  children
-  =
+let make ?(a = []) ?(variant = Responsive) ?thead ?tfoot children =
   if variant_is_unstyled variant
-  then tablex ~a:(attributes @ [ a_class classes ]) ?thead ?tfoot children
+  then tablex ~a ?thead ?tfoot children
   else (
     let merged_classes =
-      [ base_classes; classes_of_variant variant; classes ]
+      [ base_classes; classes_of_variant variant ]
       |> List.concat
       |> a_class
       |> List.return
@@ -168,5 +140,5 @@ let make
             ; "dark:text-slate-400"
             ]
         ]
-      [ tablex ~a:(attributes @ merged_classes) ?thead children ])
+      [ tablex ~a:(a @ merged_classes) ?thead children ])
 ;;

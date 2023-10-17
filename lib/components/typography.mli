@@ -39,6 +39,5 @@ val make
   -> ?size:size
   -> ?font_style:font_style
   -> ?font_weight:font_weight
-  -> children:children
-  -> unit
+  -> children
   -> [ `H1 | `H2 | `H3 | `H4 | `H5 | `H6 | `P ] Tyxml_html.elt

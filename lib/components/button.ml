@@ -1,5 +1,3 @@
-[@@@ocaml.warning "-27"]
-
 open Tyxml.Html
 
 type children = Html_types.button_content_fun elt list_wrap
@@ -103,8 +101,7 @@ let make
   ?(attributes = [])
   ?(variant = Primary)
   ?(size = Medium)
-  ~children
-  ()
+  children
   =
   let classes' = classes @ classes_of_props ~variant ~size in
   let attrs = attributes @ [ a_class classes' ] in

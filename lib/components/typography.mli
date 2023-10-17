@@ -40,4 +40,4 @@ val make
   -> ?font_style:font_style
   -> ?font_weight:font_weight
   -> children
-  -> [ `H1 | `H2 | `H3 | `H4 | `H5 | `H6 | `P ] Tyxml_html.elt
+  -> [> `H1 | `H2 | `H3 | `H4 | `H5 | `H6 | `P ] Tyxml_html.elt

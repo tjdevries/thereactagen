@@ -98,6 +98,8 @@ let classes_of_props ~variant ~size =
 ;;
 
 let make ?(a = []) ?(variant = Primary) ?(size = Medium) children =
-  let attrbutes = a @ [ a_class (classes_of_props ~variant ~size) ] in
-  button ~a:attrbutes children
+  let attributes =
+    Util.merge_attribute_list [ "class", classes_of_props ~variant ~size ] a
+  in
+  button ~a:attributes children
 ;;

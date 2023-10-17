@@ -1,6 +1,7 @@
 open Tyxml.Html
 
 type children = Html_types.button_content_fun elt list_wrap
+type attributes = Html_types.button_attrib Tyxml_html.attrib list
 
 type size =
   | Small
@@ -96,14 +97,7 @@ let classes_of_props ~variant ~size =
     [ base_classes; classes_of_variant variant; classes_of_size size ]
 ;;
 
-let make
-  ?(classes = [])
-  ?(attributes = [])
-  ?(variant = Primary)
-  ?(size = Medium)
-  children
-  =
-  let classes' = classes @ classes_of_props ~variant ~size in
-  let attrs = attributes @ [ a_class classes' ] in
-  button ~a:attrs children
+let make ?(a = []) ?(variant = Primary) ?(size = Medium) children =
+  let attrbutes = a @ [ a_class (classes_of_props ~variant ~size) ] in
+  button ~a:attrbutes children
 ;;

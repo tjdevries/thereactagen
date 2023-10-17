@@ -1,6 +1,7 @@
 open Tyxml.Html
 
 type children = Html_types.phrasing Tyxml_html.elt list_wrap
+type attributes = Html_types.common Tyxml_html.attrib list
 
 type elt =
   | H1
@@ -79,16 +80,15 @@ let elt_of_props elt =
 ;;
 
 let make
-  ?(classes = [])
-  ?(attributes = [])
+  ?(a = [])
   ?(as_elt = P)
   ?(size : size = Medium)
   ?(font_style = Sans)
   ?(font_weight = Normal)
   children
   =
-  let classes' = classes @ classes_of_props ~size ~font_style ~font_weight in
-  let attrs = attributes @ [ a_class classes' ] in
+  let classes = classes_of_props ~size ~font_style ~font_weight in
+  let attributes = a @ [ a_class classes ] in
   let elt = elt_of_props as_elt in
-  elt ~a:attrs children
+  elt ~a:attributes children
 ;;

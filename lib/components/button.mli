@@ -1,6 +1,7 @@
 open Tyxml.Html
 
 type children = Html_types.button_content_fun elt list_wrap
+type attributes = Html_types.button_attrib Tyxml_html.attrib list
 
 type size =
   | Small
@@ -18,8 +19,7 @@ type variant =
   | Twitch
 
 val make
-  :  ?classes:string list
-  -> ?attributes:Html_types.button_attrib Tyxml_html.attrib list
+  :  ?a:attributes
   -> ?variant:variant
   -> ?size:size
   -> children

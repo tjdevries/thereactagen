@@ -5,22 +5,14 @@ module Head : sig
   type attributes = Html_types.thead_attrib Tyxml_html.attrib list
   type children = Html_types.thead_content_fun elt list_wrap
 
-  val make
-    :  ?classes:string list
-    -> ?attributes:attributes
-    -> children
-    -> Html_types.thead elt
+  val make : ?a:attributes -> children -> Html_types.thead elt
 end
 
 module Body : sig
   type attributes = Html_types.tbody_attrib Tyxml_html.attrib list
   type children = Html_types.tbody_content_fun elt list_wrap
 
-  val make
-    :  ?classes:string list
-    -> ?attributes:attributes
-    -> children
-    -> Html_types.tbody elt
+  val make : ?a:attributes -> children -> Html_types.tbody elt
 end
 
 module Row : sig
@@ -40,8 +32,7 @@ module Row : sig
 
       Additional custom styling can be provided via [classes] and specific HTML attributes via [attributes]. *)
   val make
-    :  ?classes:string list
-    -> ?attributes:attributes
+    :  ?a:attributes
     -> ?hover_style:hover_style
     -> children
     -> Html_types.tr elt
@@ -52,8 +43,7 @@ module Header_cell : sig
   type children = Html_types.th_content_fun elt list_wrap
 
   val make
-    :  ?classes:string list
-    -> ?attributes:attributes
+    :  ?a:attributes
     -> Html_types.th_content_fun elt list_wrap
     -> Html_types.th elt
 end
@@ -62,11 +52,7 @@ module Data_cell : sig
   type attributes = Html_types.td_attrib Tyxml_html.attrib list
   type children = Html_types.td_content_fun elt list_wrap
 
-  val make
-    :  ?classes:string list
-    -> ?attributes:attributes
-    -> children
-    -> Html_types.td elt
+  val make : ?a:attributes -> children -> Html_types.td elt
 end
 
 type attributes = Html_types.tablex_attrib Tyxml_html.attrib list
@@ -85,8 +71,7 @@ type variant =
 
     Additional custom styling can be provided via [classes] and HTML attributes via [attributes]. *)
 val make
-  :  ?classes:string list
-  -> ?attributes:attributes
+  :  ?a:attributes
   -> ?variant:variant
   -> ?thead:Html_types.thead elt
   -> ?tfoot:Html_types.tfoot elt

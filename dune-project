@@ -52,6 +52,13 @@
    lwt cohttp-lwt-unix
    yojson ppx_deriving ppx_deriving_yojson))
 
+(package
+  (name component_library_playground)
+  (synopsis "A playground for the component library components")
+  (depends
+   (ocaml (>= "5.0"))
+   (dune (>= "3.8.2"))
+   base fmt tyxml dream dream-livereload))
 
 (package
  (name ppx_combust)

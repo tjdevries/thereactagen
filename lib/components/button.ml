@@ -52,7 +52,8 @@ let classes_of_variant = function
     ; "active:bg-slate-300"
     ]
   | Secondary_outline ->
-    [ "border-slate-400"
+    [ "border"
+    ; "border-slate-400"
     ; "bg-transparent"
     ; "text-slate-400"
     ; "hover:bg-slate-200"
@@ -62,7 +63,8 @@ let classes_of_variant = function
   | Destructive ->
     [ "bg-red-500"; "text-white"; "hover:bg-red-600"; "active:bg-red-400" ]
   | Destructive_outline ->
-    [ "border-red-500"
+    [ "border"
+    ; "border-red-500"
     ; "bg-transparent"
     ; "text-red-500"
     ; "hover:bg-red-200"
@@ -78,6 +80,7 @@ let classes_of_variant = function
   | Ghost ->
     [ "bg-transparent"
     ; "text-slate-500"
+    ; "shadow-none"
     ; "dark:text-slate-400"
     ; "hover:bg-slate-200"
     ; "dark:hover:bg-slate-700"

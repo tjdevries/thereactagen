@@ -24,13 +24,13 @@ type font_style =
 
 type font_weight =
   | Thin
-  | ExtraLight
+  | Extra_light
   | Light
   | Normal
   | Medium
-  | SemiBold
+  | Semi_bold
   | Bold
-  | ExtraBold
+  | Extra_bold
   | Black
 
 let base_classes = [ "text-slate-600"; "dark:text-slate-400" ]
@@ -43,20 +43,20 @@ let classes_of_font_style = function
 
 let classes_of_font_weight = function
   | Thin -> [ "font-thin" ]
-  | ExtraLight -> [ "font-extralight" ]
+  | Extra_light -> [ "font-extralight" ]
   | Light -> [ "font-light" ]
   | Normal -> [ "font-normal" ]
   | Medium -> [ "font-medium" ]
-  | SemiBold -> [ "font-semibold" ]
+  | Semi_bold -> [ "font-semibold" ]
   | Bold -> [ "font-bold" ]
-  | ExtraBold -> [ "font-extrabold" ]
+  | Extra_bold -> [ "font-extrabold" ]
   | Black -> [ "font-black" ]
 ;;
 
 let classes_of_size = function
-  | Small -> [ "text-sm" ]
+  | Small -> [ "text-xs" ]
   | Medium -> [ "text-base" ]
-  | Large -> [ "text-lg" ]
+  | Large -> [ "text-2xl" ]
 ;;
 
 let classes_of_props ~font_style ~font_weight ~size =

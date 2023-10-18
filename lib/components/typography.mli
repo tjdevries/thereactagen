@@ -24,13 +24,13 @@ type font_style =
 
 type font_weight =
   | Thin
-  | ExtraLight
+  | Extra_light
   | Light
   | Normal
   | Medium
-  | SemiBold
+  | Semi_bold
   | Bold
-  | ExtraBold
+  | Extra_bold
   | Black
 
 val make

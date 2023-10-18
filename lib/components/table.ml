@@ -46,7 +46,7 @@ module Row = struct
 end
 
 module Header_cell = struct
-  type attributes = Html_types.thead_attrib Tyxml_html.attrib list
+  type attributes = Html_types.th_attrib Tyxml_html.attrib list
   type children = Html_types.th_content_fun elt list_wrap
 
   let base_classes =

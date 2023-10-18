@@ -39,20 +39,20 @@ module Row : sig
 end
 
 module Header_cell : sig
-  type attributes = Html_types.thead_attrib Tyxml_html.attrib list
+  type attributes = Html_types.th_attrib Tyxml_html.attrib list
   type children = Html_types.th_content_fun elt list_wrap
 
   val make
     :  ?a:attributes
     -> Html_types.th_content_fun elt list_wrap
-    -> Html_types.th elt
+    -> [> Html_types.th ] elt
 end
 
 module Data_cell : sig
   type attributes = Html_types.td_attrib Tyxml_html.attrib list
   type children = Html_types.td_content_fun elt list_wrap
 
-  val make : ?a:attributes -> children -> Html_types.td elt
+  val make : ?a:attributes -> children -> [> Html_types.td ] elt
 end
 
 type attributes = Html_types.tablex_attrib Tyxml_html.attrib list

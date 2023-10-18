@@ -8,13 +8,14 @@ let view ~suggestion_id request =
   match suggestion with
   | Some suggestion ->
     let open Tyxml.Html in
-    let mk_button route name btn =
-      button
+    let mk_button route name variant =
+      Components.Button.make
         ~a:
           [ Hx.post (route ~suggestion_id)
           ; Hx.target (Css ("#" ^ upvote_id))
-          ; a_class [ "btn"; btn; "mx-3" ]
+          ; a_class [ "mx-3" ]
           ]
+        ~variant
         [ txt name ]
     in
     let row lbl value =
@@ -38,7 +39,7 @@ let view ~suggestion_id request =
     Reactagen.Header.html
       suggestion.title
       [ Navbar.nav_elt [ Navbar.nav_item "/" (txt "Home") ]
-      ; div
+      ; Components.Card.make (* TODO: Ask dillon if I'm doing these OK... *)
           ~a:[ a_class [ "flex justify-center flex-col max-w-md mx-auto" ] ]
           [ div
               ~a:[ a_class [ "border-2 border-white rounded-lg mt-8" ] ]
@@ -47,8 +48,8 @@ let view ~suggestion_id request =
                   rows
               ; div
                   ~a:[ a_class [ "grid grid-cols-1fr gap-4 m-3" ] ]
-                  [ mk_button VoteRoute.upvote "Upvote" "btn-success"
-                  ; mk_button VoteRoute.downvote "Downvote" "btn-error"
+                  [ mk_button VoteRoute.upvote "Upvote" Primary
+                  ; mk_button VoteRoute.downvote "Downvote" Secondary
                   ]
               ]
           ]

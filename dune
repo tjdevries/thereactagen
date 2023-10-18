@@ -1,7 +1,12 @@
 (rule
  (alias tailwind)
- (deps tailwind.css tailwind.config.js)
+ (deps
+  (:in ./tailwind.css)
+  (:config ./tailwind.config.js))
  (targets output.css)
- (action (bash "bunx tailwindcss -i ./tailwind.css -o ./output.css"))
-)
-
+ (action
+  (run bunx tailwindcss -c %{config} -i %{in} -o ./output.css))
+ (mode
+  (promote
+   (until-clean)
+   (into ./static))))

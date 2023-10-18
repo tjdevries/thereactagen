@@ -357,5 +357,6 @@ let () =
   @@ Dream.router
        [ Dream.get "/" (fun _ -> Dream.html @@ index ())
        ; Dream_livereload.route ()
+       ; Dream.get "/static/**" (Dream.static "static/")
        ]
 ;;

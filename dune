@@ -1,0 +1,7 @@
+(rule
+ (alias tailwind)
+ (deps tailwind.css tailwind.config.js)
+ (targets output.css)
+ (action (bash "bunx tailwindcss -i ./tailwind.css -o ./output.css"))
+)
+

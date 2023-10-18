@@ -13,6 +13,6 @@ let merge_attribute_list attribute_pairs attributes =
   |> List.fold
        ~init:(Tyxml.Html.to_xmlattribs attributes)
        ~f:(fun acc (name, values) ->
-         Tyxml.Xml.add_string_attrib name (String.concat ~sep:" " values) acc)
+         Tyxml.Xml.add_space_sep_attrib name (String.concat ~sep:" " values) acc)
   |> List.map ~f:Tyxml.Html.to_attrib
 ;;

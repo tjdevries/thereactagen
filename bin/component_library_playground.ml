@@ -1,16 +1,48 @@
 open Tyxml.Html
 open Components
 
+module Toggle_theme_button = struct
+  type theme =
+    | Light
+    | Dark
+
+  let theme_to_string = function
+    | Light -> "light"
+    | Dark -> "dark"
+  ;;
+
+  let endpoint = Uri.of_string "/toggle_theme"
+
+  let make ~next_theme () =
+    let theme = theme_to_string next_theme in
+    Button.make
+      ~a:
+        [ Hx.V2.Attributes.target (Css_selector "body")
+        ; Hx.V2.Attributes.swap { strategy = InnerHTML; modifier = None }
+        ; Hx.V2.Attributes.post (Uri.with_query' endpoint [ "theme", theme ])
+        ]
+      ~variant:Primary
+      [ txt "Toggle theme" ]
+  ;;
+end
+
 (* TODO: Split this out into the component-library lib w/ better helpers + abstractions *)
 let index () =
   html
     (head
        (title (txt "Component Library Playground"))
-       [ script ~a:[ a_src "https://cdn.tailwindcss.com" ] (txt "") ])
+       [ link ~rel:[ `Stylesheet ] ~href:"static/output.css" () ])
     (body
-       ~a:[ a_class [ "dark:bg-slate-900"; "dark:text-slate-400" ] ]
+       ~a:[ a_class [ "dark" ] ]
        [ div
-           ~a:[ a_class [ "w-screen"; "h-screen"; "dark" ] ]
+           ~a:
+             [ a_class
+                 [ "w-full"
+                 ; "h-full"
+                 ; "dark:bg-slate-900"
+                 ; "dark:text-slate-400"
+                 ]
+             ]
            [ div
                ~a:
                  [ a_class

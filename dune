@@ -5,6 +5,7 @@
   (:config ./tailwind.config.js))
  (targets output.css)
  (action
+  ; (bash "echo $(pwd) && touch output.css"))
   (run bunx tailwindcss -c %{config} -i %{in} -o ./output.css))
  (mode
   (promote

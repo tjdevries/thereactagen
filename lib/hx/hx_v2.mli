@@ -31,7 +31,7 @@ module Css : sig
   val to_string : t -> string
 
   module Selector : sig
-    type t
+    type t = string
 
     val of_string : string -> t
     val to_string : t -> string

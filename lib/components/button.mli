@@ -23,4 +23,4 @@ val make
   -> ?variant:variant
   -> ?size:size
   -> children
-  -> Html_types.button elt
+  -> [> Html_types.button ] elt

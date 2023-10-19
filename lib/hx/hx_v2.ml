@@ -184,12 +184,11 @@ module Target = struct
 
   let to_string = function
     | This -> "this"
-    | Closest selector -> Fmt.str "closest:%s" (Css.Selector.to_string selector)
-    | Css_selector selector ->
-      Fmt.str "css-selector:%s" (Css.Selector.to_string selector)
-    | Find selector -> Fmt.str "find:%s" (Css.Selector.to_string selector)
+    | Closest selector -> Fmt.str "closest %s" (Css.Selector.to_string selector)
+    | Css_selector selector -> Fmt.str "%s" (Css.Selector.to_string selector)
+    | Find selector -> Fmt.str "find %s" (Css.Selector.to_string selector)
     | Previous selector ->
-      Fmt.str "previous:%s" (Css.Selector.to_string selector)
+      Fmt.str "previous %s" (Css.Selector.to_string selector)
   ;;
 
   let to_attr target = Unsafe.string_attrib "hx-target" (to_string target)

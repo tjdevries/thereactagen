@@ -22,3 +22,78 @@
   (and
    (= %{system} macosx)
    (= %{architecture} arm64))))
+
+(rule
+ (alias tailwind)
+ (deps
+  (:in ./tailwind.css)
+  (:config ./tailwind.config.js)
+  (glob_files ../lib/components/*.ml))
+ (targets output.css)
+ (action
+  (run
+   ./tailwind-cli/tailwindcss-linux-arm64
+   -c
+   %{config}
+   -i
+   %{in}
+   -o
+   ./output.css))
+ (mode
+  (promote
+   (until-clean)
+   (into ../static)))
+ (enabled_if
+  (and
+   (= %{system} linux)
+   (= %{architecture} arm64))))
+
+(rule
+ (alias tailwind)
+ (deps
+  (:in ./tailwind.css)
+  (:config ./tailwind.config.js)
+  (glob_files ../lib/components/*.ml))
+ (targets output.css)
+ (action
+  (run
+   ./tailwind-cli/tailwindcss-macos-x64
+   -c
+   %{config}
+   -i
+   %{in}
+   -o
+   ./output.css))
+ (mode
+  (promote
+   (until-clean)
+   (into ../static)))
+ (enabled_if
+  (and
+   (= %{system} macosx)
+   (= %{architecture} amd64))))
+
+(rule
+ (alias tailwind)
+ (deps
+  (:in ./tailwind.css)
+  (:config ./tailwind.config.js)
+  (glob_files ../lib/components/*.ml))
+ (targets output.css)
+ (action
+  (run
+   ./tailwind-cli/tailwindcss-linux-x64
+   -c
+   %{config}
+   -i
+   %{in}
+   -o
+   ./output.css))
+ (mode
+  (promote
+   (until-clean)
+   (into ../static)))
+ (enabled_if
+  (and
+   (= %{system} linux)
+   (= %{architecture} amd64))))

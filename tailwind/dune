@@ -1,0 +1,24 @@
+(rule
+ (alias tailwind)
+ (deps
+  (:in ./tailwind.css)
+  (:config ./tailwind.config.js)
+  (glob_files ../lib/components/*.ml))
+ (targets output.css)
+ (action
+  (run
+   ./tailwind-cli/tailwindcss-macos-arm64
+   -c
+   %{config}
+   -i
+   %{in}
+   -o
+   ./output.css))
+ (mode
+  (promote
+   (until-clean)
+   (into ../static)))
+ (enabled_if
+  (and
+   (= %{system} macosx)
+   (= %{architecture} arm64))))

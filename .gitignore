@@ -44,3 +44,6 @@ _esy/
 esy.lock/
 
 profile.dump
+
+# Compiled tailwindcss
+static/style.css

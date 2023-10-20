@@ -4,9 +4,9 @@
   (:in ./tailwind.css)
   (:config ./tailwind.config.js)
   (glob_files ../lib/components/*.ml))
- (targets output.css)
+ (targets styles.css)
  (action
-  (run npx tailwindcss -c %{config} -i %{in} -o ./output.css))
+  (run npx tailwindcss -c %{config} -i %{in} -o ./styles.css))
  (mode
   (promote
    (until-clean)

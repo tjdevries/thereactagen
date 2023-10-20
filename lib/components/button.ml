@@ -26,6 +26,7 @@ let base_classes =
   ; "rounded"
   ; "shadow"
   ; "active:scale-95"
+  ; "text-indigo-500"
   ]
 ;;
 

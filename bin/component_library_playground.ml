@@ -2,6 +2,7 @@
 
 open Tyxml.Html
 open Components
+(* open! Reload_tailwind *)
 
 module Toggle_theme_button = struct
   type theme =

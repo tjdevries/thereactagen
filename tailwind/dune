@@ -1,0 +1,13 @@
+(rule
+ (alias tailwind)
+ (deps
+  (:in ./tailwind.css)
+  (:config ./tailwind.config.js)
+  (glob_files ../lib/components/*.ml))
+ (targets styles.css)
+ (action
+  (run npx tailwindcss -c %{config} -i %{in} -o ./styles.css))
+ (mode
+  (promote
+   (until-clean)
+   (into ../static))))
